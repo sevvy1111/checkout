@@ -68,7 +68,9 @@ def public_profile_view(request, username):
 def dashboard_view(request):
     user = request.user
     listings = Listing.objects.filter(seller=user).annotate(saved_count=Count('saved_by'))
-    reviews = Review.objects.filter(listing__seller=user)
+
+    # Retrieve all reviews for the seller's listings
+    reviews = Review.objects.filter(listing__seller=user).select_related('author__profile', 'listing')
 
     context = {
         'listings': listings,
@@ -118,11 +120,13 @@ def verify_phone_view(request):
         form = PhoneVerificationForm()
     return render(request, 'accounts/verify_phone.html', {'form': form})
 
+
 # New view for Order History
 @login_required
 def order_history_view(request):
     checkouts = Checkout.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'accounts/order_history.html', {'checkouts': checkouts})
+
 
 # New view for Seller Orders
 @login_required
@@ -139,7 +143,8 @@ def update_order_status_view(request, pk):
         form = OrderStatusForm(request.POST, instance=checkout_item)
         if form.is_valid():
             form.save()
-            messages.success(request, f"Order for '{checkout_item.listing.title}' has been updated to '{checkout_item.status}'.")
+            messages.success(request,
+                             f"Order for '{checkout_item.listing.title}' has been updated to '{checkout_item.status}'.")
         else:
             messages.error(request, "Invalid form submission.")
     return redirect('accounts:seller_orders')

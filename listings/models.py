@@ -118,6 +118,10 @@ class Checkout(models.Model):
     shipping_city = models.CharField(max_length=100)
     shipping_postal_code = models.CharField(max_length=20)
 
+    # New fields for payment integration
+    payment_id = models.CharField(max_length=150, blank=True, null=True)
+    paid = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

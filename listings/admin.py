@@ -13,9 +13,14 @@ class ListingAdmin(admin.ModelAdmin):
     search_fields = ("title", "description", "seller__username", "city")
     inlines = [ListingImageInline]
 
+@admin.register(Checkout)
+class CheckoutAdmin(admin.ModelAdmin):
+    list_display = ('user', 'listing', 'quantity', 'status', 'paid', 'payment_id', 'created_at')
+    list_filter = ('status', 'paid')
+    search_fields = ('user__username', 'listing__title', 'payment_id')
+
 # The Category model and its admin have been removed, so we only register these.
 admin.site.register(ListingImage)
 admin.site.register(SavedItem)
 admin.site.register(Cart)
 admin.site.register(CartItem)
-admin.site.register(Checkout)
