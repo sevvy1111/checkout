@@ -8,9 +8,10 @@ from django.db import transaction
 from django.http import JsonResponse, HttpResponseForbidden
 from django.urls import reverse
 from django.contrib import messages
+from django.db.models import Sum, F
 
 from .models import Listing, ListingImage, SavedItem, Review, Cart, CartItem, Checkout
-from .forms import ListingForm, ListingImageFormset, ReviewForm
+from .forms import ListingForm, ListingImageFormset, ReviewForm, CheckoutForm
 from .filters import ListingFilter
 
 
@@ -219,27 +220,44 @@ def checkout(request):
         messages.warning(request, "Your cart is empty. Please add items before checking out.")
         return redirect('listings:view_cart')
 
+    total_price = cart_items.aggregate(
+        total_price=Sum(F('quantity') * F('listing__price'))
+    )['total_price']
+
     if request.method == 'POST':
-        with transaction.atomic():
-            for item in cart_items:
-                listing = item.listing
-                if listing.stock >= item.quantity:
-                    listing.stock -= item.quantity
-                    listing.save()
-                    Checkout.objects.create(
-                        user=request.user,
-                        listing=listing,
-                        quantity=item.quantity
-                    )
-                    item.delete()
-                else:
-                    messages.error(request, f"Checkout failed: Insufficient stock for '{listing.title}'.")
-                    return redirect('listings:view_cart')
+        checkout_form = CheckoutForm(request.POST)
+        if checkout_form.is_valid():
+            with transaction.atomic():
+                for item in cart_items:
+                    listing = item.listing
+                    if listing.stock >= item.quantity:
+                        listing.stock -= item.quantity
+                        listing.save()
 
-            messages.success(request, "Your order has been placed successfully!")
-            return redirect('accounts:dashboard')
+                        # Create a single Checkout object with all the form data
+                        checkout_instance = checkout_form.save(commit=False)
+                        checkout_instance.user = request.user
+                        checkout_instance.listing = listing
+                        checkout_instance.quantity = item.quantity
+                        checkout_instance.save()
 
-    return render(request, 'listings/checkout.html', {'cart_items': cart_items})
+                        item.delete()
+                    else:
+                        messages.error(request, f"Checkout failed: Insufficient stock for '{listing.title}'.")
+                        return redirect('listings:view_cart')
+
+                messages.success(request, "Your order has been placed successfully!")
+                return redirect('accounts:dashboard')
+        else:
+            # If the form is invalid, re-render the checkout page with errors
+            return render(request, 'listings/checkout.html',
+                          {'cart_items': cart_items, 'form': checkout_form, 'total_price': total_price})
+
+    else:
+        checkout_form = CheckoutForm()
+
+    return render(request, 'listings/checkout.html',
+                  {'cart_items': cart_items, 'form': checkout_form, 'total_price': total_price})
 
 
 @login_required

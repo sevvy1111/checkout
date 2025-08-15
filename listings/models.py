@@ -98,15 +98,25 @@ class CartItem(models.Model):
     def __str__(self):
         return f"{self.quantity} x {self.listing.title}"
 
+
 class Checkout(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='checkouts')
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
-    status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('completed', 'Completed')], default='pending')
+    status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('completed', 'Completed')],
+                              default='pending')
+
+    # New fields for shipping information
+    full_name = models.CharField(max_length=150)
+    shipping_address = models.CharField(max_length=255)
+    shipping_city = models.CharField(max_length=100)
+    shipping_postal_code = models.CharField(max_length=20)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Checkout of {self.quantity} x {self.listing.title} by {self.user.username}"
+
 
 @property
 def average_rating(self):

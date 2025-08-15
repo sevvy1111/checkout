@@ -28,6 +28,21 @@
                     </ul>
                 </div>
             </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4>Shipping Details</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">Confirm Purchase</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
         <div class="col-md-4">
             <div class="card shadow-sm">
@@ -37,15 +52,9 @@
                     <div class="d-flex justify-content-between mb-3">
                         <span class="fw-bold">Total:</span>
                         <span class="fw-bold">
-                            ₱{% with total=0 %}{% for item in cart_items %}{% with total=item.listing.price|multiply:item.quantity %}{% endwith %}{% endfor %}{{ total|floatformat:2 }}{% endwith %}
+                            ₱{{ total_price|floatformat:2 }}
                         </span>
                     </div>
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary btn-lg">Confirm Purchase</button>
-                        </div>
-                    </form>
                 </div>
             </div>
         </div>

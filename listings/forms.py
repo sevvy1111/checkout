@@ -1,7 +1,7 @@
 # listings/forms.py
 from django import forms
 from django.forms import inlineformset_factory
-from .models import Listing, ListingImage, Review
+from .models import Listing, ListingImage, Review, Checkout
 
 # Import the same comprehensive lists
 from .filters import PHILIPPINE_CITIES, MARKETPLACE_CATEGORIES
@@ -36,4 +36,13 @@ class ReviewForm(forms.ModelForm):
         widgets = {
             'rating': forms.Select(attrs={'class': 'form-select'}),
             'comment': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Write your review here...'}),
+        }
+
+# --- New Checkout Form ---
+class CheckoutForm(forms.ModelForm):
+    class Meta:
+        model = Checkout
+        fields = ['full_name', 'shipping_address', 'shipping_city', 'shipping_postal_code']
+        widgets = {
+            'shipping_address': forms.Textarea(attrs={'rows': 3}),
         }
