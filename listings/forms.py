@@ -1,6 +1,5 @@
 # listings/forms.py
 from django import forms
-from django.forms import inlineformset_factory
 from .models import Listing, ListingImage, Review, Checkout
 
 # Import the same comprehensive lists
@@ -24,15 +23,6 @@ class ListingForm(forms.ModelForm):
             'latitude': forms.HiddenInput(),
             'longitude': forms.HiddenInput(),
         }
-
-
-ListingImageFormset = inlineformset_factory(
-    Listing,
-    ListingImage,
-    fields=['image'],
-    extra=6,
-    can_delete=True
-)
 
 
 class ReviewForm(forms.ModelForm):

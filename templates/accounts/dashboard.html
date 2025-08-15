@@ -1,4 +1,6 @@
 {% extends 'base.html' %}
+{% load static %}
+{% load listings_tags %}
 
 {% block title %}Seller Dashboard{% endblock %}
 
@@ -63,7 +65,7 @@
                                 {% endif %}
                             </td>
                             <td><a href="{{ listing.get_absolute_url }}">{{ listing.title }}</a></td>
-                            <td>₱{{ listing.price|floatformat:2 }}</td>
+                            <td>₱{{ listing.price|philippine_currency }}</td>
                             <td><span class="badge bg-{% if listing.status == 'available' %}success{% elif listing.status == 'sold' %}secondary{% else %}warning{% endif %}">{{ listing.get_status_display }}</span></td>
                             <td>{{ listing.saved_count }}</td>
                             <td>

@@ -11,7 +11,7 @@ from django.contrib import messages
 from django.db.models import Sum, F
 
 from .models import Listing, ListingImage, SavedItem, Review, Cart, CartItem, Checkout
-from .forms import ListingForm, ListingImageFormset, ReviewForm, CheckoutForm
+from .forms import ListingForm, ReviewForm, CheckoutForm, OrderStatusForm
 from .filters import ListingFilter
 
 
@@ -77,24 +77,14 @@ class ListingCreateView(LoginRequiredMixin, CreateView):
     def get_success_url(self):
         return reverse('listings:listing_detail', kwargs={'pk': self.object.pk})
 
-    def get_context_data(self, **kwargs):
-        data = super().get_context_data(**kwargs)
-        if self.request.POST:
-            data['formset'] = ListingImageFormset(self.request.POST, self.request.FILES)
-        else:
-            data['formset'] = ListingImageFormset()
-        return data
-
     def form_valid(self, form):
-        context = self.get_context_data()
-        formset = context['formset']
-
         with transaction.atomic():
             form.instance.seller = self.request.user
             self.object = form.save()
-            if formset.is_valid():
-                formset.instance = self.object
-                formset.save()
+
+            images = self.request.FILES.getlist('images')
+            for image in images:
+                ListingImage.objects.create(listing=self.object, image=image)
 
         return super().form_valid(form)
 
@@ -107,26 +97,21 @@ class ListingUpdateView(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse('listings:listing_detail', kwargs={'pk': self.object.pk})
 
-    def get_context_data(self, **kwargs):
-        data = super().get_context_data(**kwargs)
-        if self.request.POST:
-            data['formset'] = ListingImageFormset(self.request.POST, self.request.FILES, instance=self.object)
-        else:
-            data['formset'] = ListingImageFormset(instance=self.object)
-        return data
-
     def form_valid(self, form):
-        context = self.get_context_data()
-        formset = context['formset']
+        with transaction.atomic():
+            self.object = form.save()
 
-        if formset.is_valid():
-            with transaction.atomic():
-                self.object = form.save()
-                formset.instance = self.object
-                formset.save()
-            return redirect(self.get_success_url())
-        else:
-            return self.render_to_response(self.get_context_data(form=form))
+            # Handle deletion of old images
+            images_to_delete = self.request.POST.getlist('images_to_delete')
+            ListingImage.objects.filter(pk__in=images_to_delete).delete()
+
+            # Handle new images
+            new_images = self.request.FILES.getlist('images')
+            for image in new_images:
+                ListingImage.objects.create(listing=self.object, image=image)
+
+        messages.success(self.request, 'Your listing has been updated successfully!')
+        return redirect(self.get_success_url())
 
 
 @login_required

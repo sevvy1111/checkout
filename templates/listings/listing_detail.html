@@ -1,21 +1,22 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
+{% load listings_tags %}
 
 {% block title %}{{ listing.title }}{% endblock %}
 
 {% block content %}
 <div class="container my-5">
-    <div class="row">
+    <div class="row gx-5">
         <div class="col-lg-7">
-            <div id="listingCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div id="listingCarousel" class="carousel slide bg-light rounded shadow-sm" data-bs-ride="carousel">
                 <div class="carousel-inner">
                     {% for img in listing.images.all %}
                     <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                        <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ listing.title }}">
+                        <img src="{{ img.image.url }}" class="d-block w-100 rounded" alt="{{ listing.title }}">
                     </div>
                     {% empty %}
                     <div class="carousel-item active">
-                        <div class="d-flex align-items-center justify-content-center bg-light" style="height: 400px;">
+                        <div class="d-flex align-items-center justify-content-center bg-light rounded" style="height: 400px;">
                             <span class="text-muted">No Image</span>
                         </div>
                     </div>
@@ -35,19 +36,17 @@
         </div>
 
         <div class="col-lg-5">
-            <div class="card">
+            <div class="card shadow-sm h-100">
                 <div class="card-body">
-                    <h1 class="card-title">{{ listing.title }}</h1>
-                    <h2 class="card-subtitle mb-2 text-primary fw-bold">₱{{ listing.price|floatformat:2 }}</h2>
+                    <h1 class="card-title fs-3">{{ listing.title }}</h1>
+                    <h2 class="card-subtitle mb-3 text-primary fw-bold">₱{{ listing.price|philippine_currency }}</h2>
                     <p class="card-text text-muted">{{ listing.city }} • Posted {{ listing.created|timesince }} ago</p>
                     <hr>
-                    <p class="card-text">{{ listing.description|linebreaks }}</p>
-                    <hr>
-                    <div class="d-flex align-items-center">
-                        <img src="{{ listing.seller.profile.avatar.url }}" class="rounded-circle me-2" width="50" height="50">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="{{ listing.seller.profile.avatar.url }}" class="rounded-circle me-3" width="50" height="50">
                         <div>
-                            <a href="{% url 'accounts:public_profile' username=listing.seller.username %}">
-                                <strong>{{ listing.seller.username }}</strong>
+                            <a href="{% url 'accounts:public_profile' username=listing.seller.username %}" class="fw-bold text-decoration-none text-dark">
+                                {{ listing.seller.username }}
                             </a><br>
                             <small class="text-muted">
                                 {% if listing.seller.average_rating %}
@@ -58,34 +57,44 @@
                             </small>
                         </div>
                     </div>
+                    <hr>
                     <div class="d-grid gap-2 mt-3">
                         {% if user.is_authenticated and user != listing.seller %}
-                            <a href="{% url 'messaging:send_message' username=listing.seller.username %}?listing_id={{ listing.id }}" class="btn btn-primary">Message Seller</a>
-
+                            <a href="{% url 'messaging:send_message' username=listing.seller.username %}?listing_id={{ listing.id }}" class="btn btn-primary btn-lg">Message Seller</a>
                             {% if listing.stock > 0 %}
-                                <p class="card-text text-success fw-bold">In Stock: {{ listing.stock }}</p>
-                                <a href="{% url 'listings:add_to_cart' pk=listing.pk %}" class="btn btn-success">Add to Cart</a>
+                                <p class="card-text text-success fw-bold mb-0">In Stock: {{ listing.stock }}</p>
+                                <a href="{% url 'listings:add_to_cart' pk=listing.pk %}" class="btn btn-success btn-lg">Add to Cart</a>
                             {% else %}
-                                <p class="card-text text-danger fw-bold">Out of Stock</p>
-                                <button class="btn btn-danger" disabled>Add to Cart</button>
+                                <p class="card-text text-danger fw-bold mb-0">Out of Stock</p>
+                                <button class="btn btn-danger btn-lg" disabled>Out of Stock</button>
                             {% endif %}
                         {% elif user == listing.seller %}
-                            <a href="{% url 'listings:listing_update' pk=listing.pk %}" class="btn btn-secondary">Edit Listing</a>
+                            <a href="{% url 'listings:listing_update' pk=listing.pk %}" class="btn btn-secondary btn-lg">Edit Listing</a>
+                            {% if listing.status == 'available' %}
+                                <form action="{% url 'listings:mark_as_sold' pk=listing.pk %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-success btn-lg">Mark as Sold</button>
+                                </form>
+                            {% endif %}
                         {% else %}
-                            <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-primary">Login to Message Seller</a>
+                            <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-primary btn-lg">Login to Interact</a>
                         {% endif %}
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
     <div class="row mt-5">
-        <div class="col-lg-7">
+        <div class="col-12">
+            <h3 class="mb-3">Description</h3>
+            <div class="bg-white p-4 rounded shadow-sm mb-5">
+                <p class="card-text">{{ listing.description|linebreaks }}</p>
+            </div>
+            
             <h3>Reviews</h3>
             <hr>
             {% if user.is_authenticated and user != listing.seller and not has_reviewed %}
-            <div class="card mb-4">
+            <div class="card mb-4 shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">Leave a Review</h5>
                     <form method="post">
@@ -98,7 +107,7 @@
             {% endif %}
 
             {% for review in reviews %}
-            <div class="d-flex mb-3">
+            <div class="d-flex mb-3 p-3 bg-white rounded shadow-sm">
                 <img src="{{ review.author.profile.avatar.url }}" class="rounded-circle me-3" width="50" height="50">
                 <div>
                     <strong>{{ review.author.username }}</strong>
