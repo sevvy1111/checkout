@@ -46,7 +46,9 @@
                     <div class="d-flex align-items-center">
                         <img src="{{ listing.seller.profile.avatar.url }}" class="rounded-circle me-2" width="50" height="50">
                         <div>
-                            <strong>{{ listing.seller.username }}</strong><br>
+                            <a href="{% url 'accounts:public_profile' username=listing.seller.username %}">
+                                <strong>{{ listing.seller.username }}</strong>
+                            </a><br>
                             <small class="text-muted">
                                 {% if listing.seller.average_rating %}
                                     <i class="fas fa-star text-warning"></i> {{ listing.seller.average_rating|floatformat:1 }}

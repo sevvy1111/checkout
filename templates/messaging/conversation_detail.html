@@ -9,18 +9,26 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
-                    <h4 class="mb-0">Chat with {{ recipient.username }}</h4>
+                    <h4 class="mb-0">
+                        <img src="{{ recipient.profile.avatar.url }}" alt="{{ recipient.username }}'s avatar" class="rounded-circle me-2" width="40" height="40">
+                        <a href="{% url 'accounts:public_profile' username=recipient.username %}" class="text-decoration-none text-dark">
+                            Chat with {{ recipient.username }}
+                        </a>
+                    </h4>
                 </div>
                 <div class="card-body" id="chat-log" style="height: 500px; overflow-y: auto;">
                     {% for message in conversation.messages.all %}
                         <div class="d-flex mb-2 {% if message.sender == request.user %}justify-content-end{% endif %}">
-                            <div class="p-2 rounded {% if message.sender == request.user %}bg-primary text-white{% else %}bg-light{% endif %}">
-                                <strong>{{ message.sender.username }}</strong>
-                                {% if message.image %}
-                                <img src="{{ message.image.url }}" class="img-fluid my-2" style="max-width: 250px;">
-                                {% endif %}
-                                <p class="mb-0">{{ message.text }}</p>
-                                <small class="text-muted-custom">{{ message.timestamp|date:"M. d, Y, P" }}</small>
+                            <div class="d-flex align-items-end {% if message.sender == request.user %}flex-row-reverse{% endif %}">
+                                <img src="{{ message.sender.profile.avatar.url }}" alt="{{ message.sender.username }}'s avatar" class="rounded-circle {% if message.sender == request.user %}ms-2{% else %}me-2{% endif %}" width="30" height="30">
+                                <div class="p-2 rounded {% if message.sender == request.user %}bg-primary text-white{% else %}bg-light{% endif %}">
+                                    <strong>{{ message.sender.username }}</strong>
+                                    {% if message.image %}
+                                    <img src="{{ message.image.url }}" class="img-fluid my-2" style="max-width: 250px;">
+                                    {% endif %}
+                                    <p class="mb-0">{{ message.text }}</p>
+                                    <small class="text-muted-custom">{{ message.timestamp|date:"M. d, Y, P" }}</small>
+                                </div>
                             </div>
                         </div>
                     {% endfor %}
