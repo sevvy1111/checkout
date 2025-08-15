@@ -50,58 +50,6 @@ body {
     justify-content: center;
     background-color: rgba(255, 255, 255, 0.8);
 }
-/* static/css/main.css */
-
-body {
-    background-color: #f0f2f5; /* Facebook-like background color */
-}
-
-.filter-sidebar {
-    position: sticky;
-    top: 80px; /* Adjust based on navbar height */
-    height: calc(100vh - 100px);
-    overflow-y: auto;
-    padding: 1.5rem;
-    background-color: #fff;
-    border-radius: 8px;
-}
-
-.listing-card {
-    border: none;
-    transition: box-shadow .2s ease-in-out;
-}
-
-.listing-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.listing-card a {
-    text-decoration: none;
-    color: inherit;
-}
-
-.listing-card .card-img-top {
-    height: 200px;
-    object-fit: cover;
-    border-radius: 8px 8px 0 0;
-}
-
-.listing-card .card-body {
-    padding: 1rem;
-}
-.save-button {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 10;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: rgba(255, 255, 255, 0.8);
-}
 .chat-image {
     max-width: 250px;
     height: auto;

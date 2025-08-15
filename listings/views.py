@@ -184,3 +184,9 @@ def add_to_cart(request, pk):
 
     messages.success(request, f"Added {listing.title} to your cart.")
     return redirect('listings:listing_detail', pk=listing.pk)
+
+# --- New view for viewing the cart ---
+@login_required
+def view_cart(request):
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    return render(request, 'listings/cart_detail.html', {'cart': cart})

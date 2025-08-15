@@ -15,6 +15,7 @@ urlpatterns = [
     # New URL for marking a listing as sold
     path('listing/<int:pk>/mark-sold/', views.mark_listing_as_sold, name='mark_as_sold'),
 
-    # New URL for the shopping cart
+    # URL for the shopping cart
+    path('cart/', views.view_cart, name='view_cart'),
     path('listing/<int:pk>/add-to-cart/', views.add_to_cart, name='add_to_cart'),
 ]
