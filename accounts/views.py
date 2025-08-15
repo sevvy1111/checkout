@@ -5,7 +5,7 @@ from django.contrib.auth import login
 from django.contrib.auth.models import User
 from django.contrib import messages
 from .forms import RegistrationForm, ProfileForm, PhoneVerificationForm
-from listings.models import Listing, Review, SavedItem
+from listings.models import Listing, Review, SavedItem, Checkout
 from django.db.models import Count
 import random
 
@@ -116,3 +116,15 @@ def verify_phone_view(request):
     else:
         form = PhoneVerificationForm()
     return render(request, 'accounts/verify_phone.html', {'form': form})
+
+# New view for Order History
+@login_required
+def order_history_view(request):
+    checkouts = Checkout.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'accounts/order_history.html', {'checkouts': checkouts})
+
+# New view for Seller Orders
+@login_required
+def seller_orders_view(request):
+    seller_checkouts = Checkout.objects.filter(listing__seller=request.user).order_by('-created_at')
+    return render(request, 'accounts/seller_orders.html', {'seller_checkouts': seller_checkouts})

@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load listings_tags %}
+
+{% block title %}My Sales{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="mb-4">My Sales</h1>
+    <div class="row">
+        <div class="col-md-12">
+            {% if seller_checkouts %}
+                <div class="list-group">
+                    {% for checkout in seller_checkouts %}
+                        <div class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">
+                                    <a href="{% url 'listings:listing_detail' pk=checkout.listing.pk %}">{{ checkout.listing.title }}</a>
+                                </h5>
+                                <small>{{ checkout.created_at|date:"F j, Y" }}</small>
+                            </div>
+                            <p class="mb-1">Quantity: {{ checkout.quantity }}</p>
+                            <p class="mb-1">
+                                <span class="badge bg-success">
+                                    Status: {{ checkout.status|title }}
+                                </span>
+                            </p>
+                            <small class="text-muted">
+                                Buyer: {{ checkout.user.username }}<br/>
+                                Shipping to: {{ checkout.full_name }}, {{ checkout.shipping_address }}, {{ checkout.shipping_city }}
+                            </small>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info text-center" role="alert">
+                    You have not sold any items yet.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
