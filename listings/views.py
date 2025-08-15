@@ -9,7 +9,7 @@ from django.http import JsonResponse, HttpResponseForbidden
 from django.urls import reverse
 from django.contrib import messages
 
-from .models import Listing, ListingImage, SavedItem, Review, Cart, CartItem
+from .models import Listing, ListingImage, SavedItem, Review, Cart, CartItem, Checkout
 from .forms import ListingForm, ListingImageFormset, ReviewForm
 from .filters import ListingFilter
 
@@ -171,22 +171,94 @@ def mark_listing_as_sold(request, pk):
     return redirect('accounts:dashboard')
 
 
-# --- New view for adding a listing to the cart ---
 @login_required
 def add_to_cart(request, pk):
     listing = get_object_or_404(Listing, pk=pk)
     cart, created = Cart.objects.get_or_create(user=request.user)
+
+    if listing.stock <= 0:
+        messages.error(request, f"Sorry, '{listing.title}' is currently out of stock.")
+        return redirect('listings:listing_detail', pk=listing.pk)
+
     cart_item, item_created = CartItem.objects.get_or_create(cart=cart, listing=listing)
 
     if not item_created:
-        cart_item.quantity += 1
-        cart_item.save()
+        if cart_item.quantity < listing.stock:
+            cart_item.quantity += 1
+            cart_item.save()
+            messages.success(request, f"Added another '{listing.title}' to your cart.")
+        else:
+            messages.error(request, f"You have reached the maximum stock available for '{listing.title}'.")
+    else:
+        messages.success(request, f"Added '{listing.title}' to your cart.")
 
-    messages.success(request, f"Added {listing.title} to your cart.")
     return redirect('listings:listing_detail', pk=listing.pk)
 
-# --- New view for viewing the cart ---
+
 @login_required
 def view_cart(request):
     cart, created = Cart.objects.get_or_create(user=request.user)
     return render(request, 'listings/cart_detail.html', {'cart': cart})
+
+
+@login_required
+def remove_from_cart(request, pk):
+    cart_item = get_object_or_404(CartItem, pk=pk, cart__user=request.user)
+    listing_title = cart_item.listing.title
+    cart_item.delete()
+    messages.info(request, f"'{listing_title}' was removed from your cart.")
+    return redirect('listings:view_cart')
+
+
+@login_required
+def checkout(request):
+    cart = get_object_or_404(Cart, user=request.user)
+    cart_items = cart.items.all()
+
+    if not cart_items:
+        messages.warning(request, "Your cart is empty. Please add items before checking out.")
+        return redirect('listings:view_cart')
+
+    if request.method == 'POST':
+        with transaction.atomic():
+            for item in cart_items:
+                listing = item.listing
+                if listing.stock >= item.quantity:
+                    listing.stock -= item.quantity
+                    listing.save()
+                    Checkout.objects.create(
+                        user=request.user,
+                        listing=listing,
+                        quantity=item.quantity
+                    )
+                    item.delete()
+                else:
+                    messages.error(request, f"Checkout failed: Insufficient stock for '{listing.title}'.")
+                    return redirect('listings:view_cart')
+
+            messages.success(request, "Your order has been placed successfully!")
+            return redirect('accounts:dashboard')
+
+    return render(request, 'listings/checkout.html', {'cart_items': cart_items})
+
+
+@login_required
+def update_cart_item(request, pk):
+    if request.method == 'POST':
+        cart_item = get_object_or_404(CartItem, pk=pk, cart__user=request.user)
+        try:
+            new_quantity = int(request.POST.get('quantity'))
+            if new_quantity <= 0:
+                cart_item.delete()
+                messages.info(request, f"'{cart_item.listing.title}' was removed from your cart.")
+            elif new_quantity <= cart_item.listing.stock:
+                cart_item.quantity = new_quantity
+                cart_item.save()
+                messages.success(request, f"Quantity for '{cart_item.listing.title}' updated.")
+            else:
+                messages.error(request,
+                               f"Cannot update quantity. Only {cart_item.listing.stock} stocks are available for '{cart_item.listing.title}'.")
+        except (ValueError, TypeError):
+            messages.error(request, "Invalid quantity.")
+
+    return redirect('listings:view_cart')

@@ -31,6 +31,7 @@ class Listing(models.Model):
     created = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="available")
     featured = models.BooleanField(default=False)
+    stock = models.PositiveIntegerField(default=1)
 
     class Meta:
         ordering = ["-featured", "-created"]
@@ -96,3 +97,20 @@ class CartItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.listing.title}"
+
+class Checkout(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='checkouts')
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('completed', 'Completed')], default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Checkout of {self.quantity} x {self.listing.title} by {self.user.username}"
+
+@property
+def average_rating(self):
+    return Review.objects.filter(listing__seller=self).aggregate(Avg('rating'))['rating__avg']
+
+
+User.add_to_class("average_rating", average_rating)

@@ -14,7 +14,7 @@ class ListingForm(forms.ModelForm):
     class Meta:
         model = Listing
         # Ensure all relevant fields are included
-        fields = ['title', 'description', 'price', 'category', 'city', 'status', 'featured', 'latitude', 'longitude']
+        fields = ['title', 'description', 'price', 'category', 'city', 'status', 'featured', 'latitude', 'longitude', 'stock']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 5}),
             'latitude': forms.HiddenInput(),

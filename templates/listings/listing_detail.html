@@ -59,7 +59,14 @@
                     <div class="d-grid gap-2 mt-3">
                         {% if user.is_authenticated and user != listing.seller %}
                             <a href="{% url 'messaging:send_message' username=listing.seller.username %}?listing_id={{ listing.id }}" class="btn btn-primary">Message Seller</a>
-                            <a href="{% url 'listings:add_to_cart' pk=listing.pk %}" class="btn btn-success">Add to Cart</a>
+
+                            {% if listing.stock > 0 %}
+                                <p class="card-text text-success fw-bold">In Stock: {{ listing.stock }}</p>
+                                <a href="{% url 'listings:add_to_cart' pk=listing.pk %}" class="btn btn-success">Add to Cart</a>
+                            {% else %}
+                                <p class="card-text text-danger fw-bold">Out of Stock</p>
+                                <button class="btn btn-danger" disabled>Add to Cart</button>
+                            {% endif %}
                         {% elif user == listing.seller %}
                             <a href="{% url 'listings:listing_update' pk=listing.pk %}" class="btn btn-secondary">Edit Listing</a>
                         {% else %}
