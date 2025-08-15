@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from .forms import RegistrationForm, ProfileForm, PhoneVerificationForm
 from listings.models import Listing, Review, SavedItem, Checkout
+from listings.forms import OrderStatusForm
 from django.db.models import Count
 import random
 
@@ -127,4 +128,18 @@ def order_history_view(request):
 @login_required
 def seller_orders_view(request):
     seller_checkouts = Checkout.objects.filter(listing__seller=request.user).order_by('-created_at')
-    return render(request, 'accounts/seller_orders.html', {'seller_checkouts': seller_checkouts})
+    forms = {checkout.id: OrderStatusForm(instance=checkout) for checkout in seller_checkouts}
+    return render(request, 'accounts/seller_orders.html', {'seller_checkouts': seller_checkouts, 'forms': forms})
+
+
+@login_required
+def update_order_status_view(request, pk):
+    if request.method == 'POST':
+        checkout_item = get_object_or_404(Checkout, pk=pk, listing__seller=request.user)
+        form = OrderStatusForm(request.POST, instance=checkout_item)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Order for '{checkout_item.listing.title}' has been updated to '{checkout_item.status}'.")
+        else:
+            messages.error(request, "Invalid form submission.")
+    return redirect('accounts:seller_orders')

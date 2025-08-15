@@ -13,6 +13,8 @@ urlpatterns = [
     path('saved/', views.saved_listings_view, name='saved_listings'),
     path('order-history/', views.order_history_view, name='order_history'),
     path('seller-orders/', views.seller_orders_view, name='seller_orders'),
+    path('seller-orders/update-status/<int:pk>/', views.update_order_status_view, name='update_order_status'),
+
 
     # New URLs for phone verification
     path('verify-phone/', views.verify_phone_view, name='verify_phone'),

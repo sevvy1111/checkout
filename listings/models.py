@@ -100,11 +100,17 @@ class CartItem(models.Model):
 
 
 class Checkout(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('shipped', 'Shipped'),
+        ('delivered', 'Delivered'),
+        ('cancelled', 'Cancelled'),
+    )
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='checkouts')
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
-    status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('completed', 'Completed')],
-                              default='pending')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
     # New fields for shipping information
     full_name = models.CharField(max_length=150)

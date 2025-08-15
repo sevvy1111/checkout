@@ -19,9 +19,15 @@
                             </div>
                             <p class="mb-1">Quantity: {{ checkout.quantity }}</p>
                             <p class="mb-1">
-                                <span class="badge bg-success">
-                                    Status: {{ checkout.status|title }}
-                                </span>
+                                {% if checkout.status == 'pending' %}
+                                <span class="badge bg-secondary">Status: {{ checkout.status|title }}</span>
+                                {% elif checkout.status == 'shipped' %}
+                                <span class="badge bg-primary">Status: {{ checkout.status|title }}</span>
+                                {% elif checkout.status == 'delivered' %}
+                                <span class="badge bg-success">Status: {{ checkout.status|title }}</span>
+                                {% elif checkout.status == 'cancelled' %}
+                                <span class="badge bg-danger">Status: {{ checkout.status|title }}</span>
+                                {% endif %}
                             </p>
                             <small class="text-muted">
                                 Shipping to: {{ checkout.full_name }}, {{ checkout.shipping_address }}, {{ checkout.shipping_city }}

@@ -46,3 +46,8 @@ class CheckoutForm(forms.ModelForm):
         widgets = {
             'shipping_address': forms.Textarea(attrs={'rows': 3}),
         }
+
+class OrderStatusForm(forms.ModelForm):
+    class Meta:
+        model = Checkout
+        fields = ['status']
