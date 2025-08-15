@@ -1,0 +1,186 @@
+# listings/views.py
+from django.shortcuts import render, redirect, get_object_or_404
+from django.template.loader import render_to_string
+from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.http import JsonResponse, HttpResponseForbidden
+from django.urls import reverse
+from django.contrib import messages
+
+from .models import Listing, ListingImage, SavedItem, Review, Cart, CartItem
+from .forms import ListingForm, ListingImageFormset, ReviewForm
+from .filters import ListingFilter
+
+
+class ListingListView(ListView):
+    model = Listing
+    template_name = 'listings/listing_list.html'
+    context_object_name = 'listings'
+    paginate_by = 12
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # Corrected: Removed 'category' from select_related as it is no longer a ForeignKey
+        self.filterset = ListingFilter(self.request.GET, queryset=queryset.select_related('seller'))
+        return self.filterset.qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['filter'] = self.filterset
+        if self.request.user.is_authenticated:
+            context['saved_listing_ids'] = SavedItem.objects.filter(
+                user=self.request.user
+            ).values_list('listing__id', flat=True)
+        else:
+            context['saved_listing_ids'] = []
+        return context
+
+
+class ListingDetailView(DetailView):
+    model = Listing
+    template_name = 'listings/listing_detail.html'
+    context_object_name = 'listing'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['reviews'] = self.object.reviews.all().select_related('author__profile')
+        context['review_form'] = ReviewForm()
+        if self.request.user.is_authenticated:
+            context['has_reviewed'] = Review.objects.filter(listing=self.object, author=self.request.user).exists()
+        else:
+            context['has_reviewed'] = False
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.listing = self.object
+            review.author = request.user
+            review.save()
+            return redirect(self.object.get_absolute_url())
+        else:
+            context = self.get_context_data()
+            context['review_form'] = form
+            return self.render_to_response(context)
+
+
+class ListingCreateView(LoginRequiredMixin, CreateView):
+    model = Listing
+    form_class = ListingForm
+    template_name = 'listings/listing_create.html'
+
+    def get_success_url(self):
+        return reverse('listings:listing_detail', kwargs={'pk': self.object.pk})
+
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        if self.request.POST:
+            data['formset'] = ListingImageFormset(self.request.POST, self.request.FILES)
+        else:
+            data['formset'] = ListingImageFormset()
+        return data
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        formset = context['formset']
+
+        with transaction.atomic():
+            form.instance.seller = self.request.user
+            self.object = form.save()
+            if formset.is_valid():
+                formset.instance = self.object
+                formset.save()
+
+        return super().form_valid(form)
+
+
+class ListingUpdateView(LoginRequiredMixin, UpdateView):
+    model = Listing
+    form_class = ListingForm
+    template_name = 'listings/listing_update.html'
+
+    def get_success_url(self):
+        return reverse('listings:listing_detail', kwargs={'pk': self.object.pk})
+
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        if self.request.POST:
+            data['formset'] = ListingImageFormset(self.request.POST, self.request.FILES, instance=self.object)
+        else:
+            data['formset'] = ListingImageFormset(instance=self.object)
+        return data
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        formset = context['formset']
+
+        if formset.is_valid():
+            with transaction.atomic():
+                self.object = form.save()
+                formset.instance = self.object
+                formset.save()
+            return redirect(self.get_success_url())
+        else:
+            return self.render_to_response(self.get_context_data(form=form))
+
+
+@login_required
+def toggle_save_listing(request, pk):
+    if request.method == 'POST':
+        listing = get_object_or_404(Listing, pk=pk)
+        saved_item, created = SavedItem.objects.get_or_create(user=request.user, listing=listing)
+        if not created:
+            saved_item.delete()
+            is_saved = False
+        else:
+            is_saved = True
+        return JsonResponse({'is_saved': is_saved})
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+def filter_listings(request):
+    # Corrected: Removed 'category' from select_related
+    filter = ListingFilter(request.GET, queryset=Listing.objects.all().select_related('seller'))
+    saved_listing_ids = []
+    if request.user.is_authenticated:
+        saved_listing_ids = SavedItem.objects.filter(user=request.user).values_list('listing__id', flat=True)
+    context = {
+        'filter': filter,
+        'saved_listing_ids': saved_listing_ids,
+        'user': request.user
+    }
+    html = render_to_string('listings/partials/listings_grid.html', context)
+    return JsonResponse({'html': html})
+
+
+@login_required
+def mark_listing_as_sold(request, pk):
+    listing = get_object_or_404(Listing, pk=pk)
+    if request.user != listing.seller:
+        return HttpResponseForbidden()
+
+    if request.method == 'POST':
+        listing.status = 'sold'
+        listing.save()
+        return redirect('accounts:dashboard')
+
+    return redirect('accounts:dashboard')
+
+
+# --- New view for adding a listing to the cart ---
+@login_required
+def add_to_cart(request, pk):
+    listing = get_object_or_404(Listing, pk=pk)
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_item, item_created = CartItem.objects.get_or_create(cart=cart, listing=listing)
+
+    if not item_created:
+        cart_item.quantity += 1
+        cart_item.save()
+
+    messages.success(request, f"Added {listing.title} to your cart.")
+    return redirect('listings:listing_detail', pk=listing.pk)

@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Update {{ listing.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-10">
+      <div class="card p-4 shadow-sm">
+        <h2 class="mb-4 text-center">Update Listing</h2>
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+
+          <div class="card mb-4">
+            <div class="card-header">
+              <h5>Listing Details</h5>
+            </div>
+            <div class="card-body">
+              {{ form|crispy }}
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h5>Edit Images</h5>
+              <small class="text-muted">You can replace images, remove existing ones, or add new ones.</small>
+            </div>
+            <div class="card-body">
+              {{ formset.management_form }}
+              {% for image_form in formset %}
+                <div class="form-group border-bottom pb-3 mb-3">
+                  {% if image_form.instance.image %}
+                    <img src="{{ image_form.instance.image.url }}" class="img-thumbnail mb-2" style="max-width: 150px;">
+                  {% endif %}
+                  {{ image_form|crispy }}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mt-4">
+            <button type="submit" class="btn btn-primary btn-lg">Update Listing</button>
+            <a href="{{ listing.get_absolute_url }}" class="btn btn-secondary btn-lg">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

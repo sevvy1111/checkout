@@ -1,0 +1,3 @@
+{# This template overrides the default file input to hide the "Currently: <path>" text #}
+{% if widget.is_initial %}{% endif %}
+<input type="{{ widget.type }}" name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %}>

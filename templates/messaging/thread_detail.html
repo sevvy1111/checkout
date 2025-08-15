@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Conversation{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4>Chat with {{ other.username }}</h4>
+  <a href="{% url 'messaging:inbox' %}" class="btn btn-link">Back to inbox</a>
+</div>
+
+<div class="border rounded p-3 mb-3" style="max-height:60vh; overflow:auto;">
+  {% for msg in conversation.messages.all %}
+    <div class="mb-2 {% if msg.sender == request.user %}text-right{% endif %}">
+      <div class="{% if msg.sender == request.user %}d-inline-block bg-primary text-white p-2 rounded{% else %}d-inline-block bg-light p-2 rounded{% endif %}">
+        <small class="text-muted">{{ msg.sender.username }}</small><br/>
+        <div>{{ msg.body|linebreaksbr }}</div>
+        <small class="text-muted">{{ msg.sent_at|date:"M j, Y H:i" }}</small>
+      </div>
+    </div>
+  {% empty %}
+    <p class="text-muted">No messages yet — say hi!</p>
+  {% endfor %}
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button class="btn btn-primary">Send</button>
+</form>
+{% endblock %}

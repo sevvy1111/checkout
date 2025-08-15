@@ -1,0 +1,35 @@
+{% for listing in filter.qs %}
+    <div class="col">
+        <div class="card listing-card h-100">
+            <div class="position-relative">
+                <a href="{{ listing.get_absolute_url }}">
+                    {% if listing.images.first %}
+                        <img src="{{ listing.images.first.image.url }}" class="card-img-top" alt="{{ listing.title }}">
+                    {% else %}
+                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                            <span class="text-muted">No Image</span>
+                        </div>
+                    {% endif %}
+                </a>
+                {% if user.is_authenticated %}
+                <button class="btn btn-light btn-sm save-button" data-listing-id="{{ listing.pk }}">
+                    {% if listing.pk in saved_listing_ids %}
+                        <i class="fas fa-heart text-danger"></i>
+                    {% else %}
+                        <i class="far fa-heart"></i>
+                    {% endif %}
+                </button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <h5 class="card-title fw-bold">₱{{ listing.price|floatformat:2 }}</h5>
+                <p class="card-text">{{ listing.title }}</p>
+                <p class="card-text text-muted small">{{ listing.city }}</p>
+            </div>
+        </div>
+    </div>
+{% empty %}
+    <div class="col-12">
+        <p class="text-center">No listings found. Try adjusting your filters!</p>
+    </div>
+{% endfor %}

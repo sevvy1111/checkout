@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="container mt-5">
+    <div class="row">
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-body text-center">
+            <img src="{{ profile.avatar.url }}" alt="{{ user.username }}'s profile image" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px;">
+            <h5 class="card-title">{{ user.username }}</h5>
+            <p class="card-text text-muted">{{ user.email }}</p>
+            <p class="card-text">{{ profile.bio }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-8">
+        <h2>Listings by {{ user.username }}</h2>
+        {% if user_listings %}
+          <div class="row">
+            {% for listing in user_listings %}
+              <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                  {% if listing.images.all %}
+                    <img src="{{ listing.images.first.image.url }}" class="card-img-top" alt="{{ listing.title }}">
+                  {% endif %}
+                  <div class="card-body">
+                    <h5 class="card-title">{{ listing.title }}</h5>
+                    <p class="card-text">{{ listing.description|truncatechars:100 }}</p>
+                    <p class="card-text"><strong>Price: ${{ listing.price }}</strong></p>
+                    <a href="{% url 'listings:listing_detail' listing.id %}" class="btn btn-primary">View Listing</a>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p>{{ user.username }} has no listings yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Create Listing — Marketplace{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-10">
+    <div class="card p-4 shadow-sm">
+      <h2 class="mb-4 text-center">Create a New Listing</h2>
+      <form method="post" enctype="multipart/form-data" id="listing-form">
+        {% csrf_token %}
+
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5>Listing Details</h5>
+          </div>
+          <div class="card-body">
+            {{ form|crispy }}
+            <div id="map" style="height: 300px; margin-top: 20px; border-radius: 8px;"></div>
+            <small class="form-text text-muted">Drag the pin to set the listing's location.</small>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h5>Upload Images</h5>
+            <small class="text-muted">You can upload up to 6 images.</small>
+          </div>
+          <div class="card-body">
+            {{ formset.management_form }}
+            {% for image_form in formset %}
+              <div class="form-group border-bottom pb-3 mb-3">
+                {{ image_form|crispy }}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="d-grid gap-2 mt-4">
+          <button type="submit" class="btn btn-primary btn-lg">Create Listing</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize map, centered on Angeles City, Philippines
+      const map = L.map('map').setView([15.145, 120.589], 13);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+
+      // Get form fields
+      const latField = document.getElementById('id_latitude');
+      const lonField = document.getElementById('id_longitude');
+
+      // Add a marker
+      let marker = L.marker(map.getCenter(), {
+        draggable: true
+      }).addTo(map);
+
+      // Set initial form values
+      latField.value = marker.getLatLng().lat.toFixed(6);
+      lonField.value = marker.getLatLng().lng.toFixed(6);
+
+      // Update form fields when marker is dragged
+      marker.on('dragend', function(event) {
+        const position = marker.getLatLng();
+        latField.value = position.lat.toFixed(6);
+        lonField.value = position.lng.toFixed(6);
+      });
+    });
+  </script>
+{% endblock %}

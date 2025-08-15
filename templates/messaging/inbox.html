@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Inbox</h2>
+<hr>
+
+<div class="list-group">
+    {% for conversation in conversations %}
+        <a href="{{ conversation.get_absolute_url }}" class="list-group-item list-group-item-action" data-conversation-pk="{{ conversation.pk }}">
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">
+                    {% for participant in conversation.participants.all %}
+                        {% if participant != request.user %}
+                            {{ participant.username }}
+                        {% endif %}
+                    {% endfor %}
+                </h5>
+                <small class="conversation-timestamp">{{ conversation.updated_at|date:"M j, Y" }}</small>
+            </div>
+            <p class="mb-1 conversation-last-message">
+                {% if conversation.messages.last %}
+                    {{ conversation.messages.last.text|truncatechars:100 }}
+                {% else %}
+                    No messages yet.
+                {% endif %}
+            </p>
+        </a>
+    {% empty %}
+        <p class="text-muted">You have no conversations.</p>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const conversationsList = document.querySelector('.list-group');
+
+        // WebSocket for real-time updates to the inbox
+        const inboxSocket = new WebSocket(
+            'ws://'
+            + window.location.host
+            + '/ws/notifications/'
+        );
+
+        inboxSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+
+            // Check if the notification is a new message
+            if (data.type === 'new_message' && data.conversation_pk) {
+                const conversationLink = conversationsList.querySelector(`[data-conversation-pk="${data.conversation_pk}"]`);
+                if (conversationLink) {
+                    // Update the existing conversation item
+                    const lastMessageElement = conversationLink.querySelector('.conversation-last-message');
+                    if (lastMessageElement) {
+                        lastMessageElement.textContent = data.message_text.substring(0, 100) + '...';
+                    }
+                    const timestampElement = conversationLink.querySelector('.conversation-timestamp');
+                    if (timestampElement) {
+                        timestampElement.textContent = data.timestamp;
+                    }
+
+                    // Move the conversation to the top of the list
+                    conversationsList.prepend(conversationLink);
+
+                } else {
+                    // This is a new conversation. A full page reload is required to show it.
+                    // For a more advanced implementation, you could dynamically create the new HTML element here.
+                    // For simplicity, we'll suggest a reload.
+                    window.location.reload();
+                }
+            }
+        };
+
+        inboxSocket.onclose = function(e) {
+            console.error('Inbox socket closed unexpectedly');
+        };
+    });
+</script>
+{% endblock %}

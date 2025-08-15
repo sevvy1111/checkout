@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load listings_tags %}
+
+{% block title %}My Shopping Cart{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="mb-4">My Shopping Cart</h1>
+
+    {% if cart and cart.items.all %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in cart.items.all %}
+                            <tr>
+                                <td class="align-middle">
+                                    <div class="d-flex align-items-center">
+                                        {% if item.listing.images.first %}
+                                            <img src="{{ item.listing.images.first.image.url }}" class="rounded me-3" style="width: 80px; height: 80px; object-fit: cover;">
+                                        {% endif %}
+                                        <a href="{{ item.listing.get_absolute_url }}" class="text-decoration-none">
+                                            {{ item.listing.title }}
+                                        </a>
+                                    </div>
+                                </td>
+                                <td class="align-middle">₱{{ item.listing.price|floatformat:2 }}</td>
+                                <td class="align-middle">{{ item.quantity }}</td>
+                                <td class="align-middle">₱{{ item.listing.price|multiply:item.quantity|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center" role="alert">
+            Your cart is empty.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

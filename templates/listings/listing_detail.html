@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ listing.title }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-7">
+            <div id="listingCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    {% for img in listing.images.all %}
+                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ listing.title }}">
+                    </div>
+                    {% empty %}
+                    <div class="carousel-item active">
+                        <div class="d-flex align-items-center justify-content-center bg-light" style="height: 400px;">
+                            <span class="text-muted">No Image</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if listing.images.all|length > 1 %}
+                <button class="carousel-control-prev" type="button" data-bs-target="#listingCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#listingCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="card-title">{{ listing.title }}</h1>
+                    <h2 class="card-subtitle mb-2 text-primary fw-bold">₱{{ listing.price|floatformat:2 }}</h2>
+                    <p class="card-text text-muted">{{ listing.city }} • Posted {{ listing.created|timesince }} ago</p>
+                    <hr>
+                    <p class="card-text">{{ listing.description|linebreaks }}</p>
+                    <hr>
+                    <div class="d-flex align-items-center">
+                        <img src="{{ listing.seller.profile.avatar.url }}" class="rounded-circle me-2" width="50" height="50">
+                        <div>
+                            <strong>{{ listing.seller.username }}</strong><br>
+                            <small class="text-muted">
+                                {% if listing.seller.average_rating %}
+                                    <i class="fas fa-star text-warning"></i> {{ listing.seller.average_rating|floatformat:1 }}
+                                {% else %}
+                                    No reviews yet
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2 mt-3">
+                        {% if user.is_authenticated and user != listing.seller %}
+                            <a href="{% url 'messaging:send_message' username=listing.seller.username %}?listing_id={{ listing.id }}" class="btn btn-primary">Message Seller</a>
+                            <a href="{% url 'listings:add_to_cart' pk=listing.pk %}" class="btn btn-success">Add to Cart</a>
+                        {% elif user == listing.seller %}
+                            <a href="{% url 'listings:listing_update' pk=listing.pk %}" class="btn btn-secondary">Edit Listing</a>
+                        {% else %}
+                            <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-primary">Login to Message Seller</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-lg-7">
+            <h3>Reviews</h3>
+            <hr>
+            {% if user.is_authenticated and user != listing.seller and not has_reviewed %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Leave a Review</h5>
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ review_form|crispy }}
+                        <button type="submit" class="btn btn-primary mt-2">Submit Review</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            {% for review in reviews %}
+            <div class="d-flex mb-3">
+                <img src="{{ review.author.profile.avatar.url }}" class="rounded-circle me-3" width="50" height="50">
+                <div>
+                    <strong>{{ review.author.username }}</strong>
+                    <div class="text-warning mb-1">
+                        {% for i in "12345"|make_list %}
+                            <i class="{% if forloop.counter <= review.rating %}fas{% else %}far{% endif %} fa-star"></i>
+                        {% endfor %}
+                    </div>
+                    <p>{{ review.comment }}</p>
+                    <small class="text-muted">{{ review.created_at|date:"F j, Y" }}</small>
+                </div>
+            </div>
+            {% empty %}
+            <p>No reviews for this listing yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

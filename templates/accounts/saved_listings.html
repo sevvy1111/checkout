@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}My Saved Items{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="mb-4">My Saved Items</h1>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+        {% for item in saved_items %}
+            <div class="col">
+                <div class="card listing-card h-100">
+                    <a href="{{ item.listing.get_absolute_url }}">
+                        {% if item.listing.images.first %}
+                            <img src="{{ item.listing.images.first.image.url }}" class="card-img-top" alt="{{ item.listing.title }}">
+                        {% else %}
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <span class="text-muted">No Image</span>
+                            </div>
+                        {% endif %}
+                    </a>
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold">₱{{ item.listing.price|floatformat:2 }}</h5>
+                        <p class="card-text">{{ item.listing.title }}</p>
+                        <p class="card-text text-muted small">{{ item.listing.city }}</p>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <p class="text-center text-muted fs-5">You haven't saved any items yet.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
