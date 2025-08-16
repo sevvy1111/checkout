@@ -29,6 +29,5 @@ urlpatterns = [
     path('msgs/', include(('messaging.urls', 'messaging'), namespace='messaging')),
 ]
 
-# The `static()` function is for local development only.
-# It is explicitly removed in production settings where DEBUG=False.
-# Media files are now handled by Cloudinary.
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
