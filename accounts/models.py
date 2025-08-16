@@ -7,8 +7,7 @@ from cloudinary.models import CloudinaryField
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    # The 'avatar' field is now optional and uses a default image.
-    avatar = CloudinaryField('avatar', blank=True, null=True, default='static/images/default_avatar.svg')
+    avatar = CloudinaryField('avatar', blank=True, null=True)
     phone = models.CharField(
         max_length=13,
         null=True,
@@ -25,7 +24,8 @@ class Profile(models.Model):
 
     @property
     def display_avatar_url(self):
-        if self.avatar and self.avatar.url:
+        # Corrected logic to handle the fallback gracefully
+        if self.avatar and hasattr(self.avatar, 'url') and self.avatar.url:
             return self.avatar.url
         return settings.STATIC_URL + 'images/default_avatar.svg'
 

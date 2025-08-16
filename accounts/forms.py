@@ -20,9 +20,6 @@ class RegistrationForm(UserCreationForm):
         return email
 
 class ProfileForm(forms.ModelForm):
-    # Include the avatar field for file upload handling.
-    avatar = forms.ImageField(required=False)
-
     class Meta:
         model = Profile
         fields = ['avatar', 'phone', 'bio']

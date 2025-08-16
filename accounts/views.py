@@ -17,7 +17,6 @@ from .forms import RegistrationForm, ProfileForm, PhoneVerificationForm
 def profile_view(request):
     profile = request.user.profile
     if request.method == 'POST':
-        # Pass both request.POST and request.FILES to the form
         p_form = ProfileForm(request.POST, request.FILES, instance=profile)
         if p_form.is_valid():
             p_form.save()
