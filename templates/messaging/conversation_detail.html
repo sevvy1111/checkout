@@ -55,6 +55,8 @@
         const conversationId = JSON.parse(document.getElementById('conversation-id').textContent);
         const currentUsername = JSON.parse(document.getElementById('current-username').textContent);
         const recipientUsername = JSON.parse(document.getElementById('recipient-username').textContent);
+        const currentUserAvatarUrl = "{{ request.user.profile.avatar.url }}";
+        const recipientAvatarUrl = "{{ recipient.profile.avatar.url }}";
 
         const chatLog = document.getElementById('chat-log');
         const chatForm = document.getElementById('chat-form');
@@ -74,25 +76,30 @@
         chatSocket.onmessage = function(e) {
             const data = JSON.parse(e.data);
             const isSender = data.sender === currentUsername;
+            const tempId = data.temp_id;
 
-            // Check for a placeholder and remove it if it exists
-            const placeholder = chatLog.querySelector(`[data-temp-id="${data.temp_id}"]`);
+            // Remove the placeholder message if it exists
+            const placeholder = chatLog.querySelector(`[data-temp-id="${tempId}"]`);
             if (placeholder) {
                 placeholder.remove();
             }
 
+            // Create the new message element with the final data
             let messageContent = `<p class="mb-0">${data.message}</p>`;
             if (data.image_url) {
-                messageContent = `<img src="${data.image_url}" class="img-fluid my-2" style="max-width: 250px;">` + messageContent;
+                messageContent = `<img src="${data.image_url}" class="img-fluid my-2" style="max-width: 250px;">${messageContent}`;
             }
 
             const messageElement = document.createElement('div');
             messageElement.className = `d-flex mb-2 ${isSender ? 'justify-content-end' : ''}`;
             messageElement.innerHTML = `
-                <div class="p-2 rounded ${isSender ? 'bg-primary text-white' : 'bg-light'}">
-                    <strong>${data.sender}</strong>
-                    ${messageContent}
-                    <small class="text-muted-custom">${data.timestamp}</small>
+                <div class="d-flex align-items-end ${isSender ? 'flex-row-reverse' : ''}">
+                    <img src="${isSender ? currentUserAvatarUrl : recipientAvatarUrl}" class="rounded-circle ${isSender ? 'ms-2' : 'me-2'}" width="30" height="30">
+                    <div class="p-2 rounded ${isSender ? 'bg-primary text-white' : 'bg-light'}">
+                        <strong>${data.sender}</strong>
+                        ${messageContent}
+                        <small class="text-muted-custom">${data.timestamp}</small>
+                    </div>
                 </div>
             `;
             chatLog.appendChild(messageElement);
@@ -109,44 +116,48 @@
             const formData = new FormData(chatForm);
             const messageText = messageInput.value.trim();
             const messageImage = imageInput.files[0];
-            const tempId = Date.now(); // Create a unique temporary ID
+            const tempId = Date.now();
 
             if (messageText !== '' || messageImage) {
-                // Instantly render a pending message to provide feedback
+                // Instantly render a pending message to provide feedback (Optimistic UI)
                 let pendingMessageContent = `<p class="mb-0">${messageText}</p>`;
+                const pendingMessageElement = document.createElement('div');
+                pendingMessageElement.className = `d-flex mb-2 justify-content-end`;
+                pendingMessageElement.dataset.tempId = tempId;
+
                 if (messageImage) {
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         const tempImageHtml = `<img src="${e.target.result}" class="img-fluid my-2" style="max-width: 250px;">`;
-                        const pendingMessageElement = document.createElement('div');
-                        pendingMessageElement.className = `d-flex mb-2 justify-content-end`;
-                        pendingMessageElement.dataset.tempId = tempId;
                         pendingMessageElement.innerHTML = `
-                            <div class="p-2 rounded bg-primary text-white">
-                                <strong>${currentUsername}</strong>
-                                ${tempImageHtml}
-                                ${pendingMessageContent}
-                                <small class="text-muted-custom">Sending...</small>
+                            <div class="d-flex align-items-end flex-row-reverse">
+                                <img src="${currentUserAvatarUrl}" class="rounded-circle ms-2" width="30" height="30">
+                                <div class="p-2 rounded bg-primary text-white">
+                                    <strong>${currentUsername}</strong>
+                                    ${tempImageHtml}
+                                    ${pendingMessageContent}
+                                    <small class="text-muted-custom">Sending...</small>
+                                </div>
                             </div>
                         `;
-                        chatLog.appendChild(pendingMessageElement);
-                        chatLog.scrollTop = chatLog.scrollHeight;
                     }
                     reader.readAsDataURL(messageImage);
                 } else {
-                    const pendingMessageElement = document.createElement('div');
-                    pendingMessageElement.className = `d-flex mb-2 justify-content-end`;
-                    pendingMessageElement.dataset.tempId = tempId;
                     pendingMessageElement.innerHTML = `
-                        <div class="p-2 rounded bg-primary text-white">
-                            <strong>${currentUsername}</strong>
-                            ${pendingMessageContent}
-                            <small class="text-muted-custom">Sending...</small>
+                        <div class="d-flex align-items-end flex-row-reverse">
+                            <img src="${currentUserAvatarUrl}" class="rounded-circle ms-2" width="30" height="30">
+                            <div class="p-2 rounded bg-primary text-white">
+                                <strong>${currentUsername}</strong>
+                                ${pendingMessageContent}
+                                <small class="text-muted-custom">Sending...</small>
+                            </div>
                         </div>
                     `;
-                    chatLog.appendChild(pendingMessageElement);
-                    chatLog.scrollTop = chatLog.scrollHeight;
                 }
+
+                chatLog.appendChild(pendingMessageElement);
+                chatLog.scrollTop = chatLog.scrollHeight;
+
 
                 formData.append('temp_id', tempId);
 

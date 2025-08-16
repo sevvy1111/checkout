@@ -1,17 +1,20 @@
 # marketplace/settings.py
 from pathlib import Path
 import os
+import dj_database_url  # You will need to install this
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-cym2oo+i$d*-9aj=eazmaqbv$6z*ykaa7txeoz3xc$iiz19)!('
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-cym2oo+i$d*-9aj=eazmaqbv$6z*ykaa7txeoz3xc$iiz19)!(')
 
-DEBUG = True
+# In production, DEBUG should be False.
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+# Add your Render URL to ALLOWED_HOSTS
+ALLOWED_HOSTS = ['your-render-app-name.onrender.com']
 
 INSTALLED_APPS = [
-    'daphne',  # Add daphne for ASGI
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -22,7 +25,7 @@ INSTALLED_APPS = [
     'django_filters',
     'crispy_forms',
     'crispy_bootstrap4',
-    'channels',  # Add channels
+    'channels',
     'accounts',
     'listings',
     'messaging',
@@ -66,7 +69,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
+            "hosts": [os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379')],
         },
     },
 }
@@ -74,10 +77,10 @@ CHANNEL_LAYERS = {
 WSGI_APPLICATION = 'marketplace.wsgi.application'
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default='sqlite:///db.sqlite3',
+        conn_max_age=600
+    )
 }
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -100,8 +103,8 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
