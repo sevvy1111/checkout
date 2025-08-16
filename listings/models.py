@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
 from django.db.models import Avg
+from cloudinary.models import CloudinaryField
 
 User = get_user_model()
 
@@ -40,7 +41,7 @@ class Listing(models.Model):
 
 class ListingImage(models.Model):
     listing = models.ForeignKey(Listing, related_name="images", on_delete=models.CASCADE)
-    image = models.ImageField(upload_to="listings/%Y/%m/%d")
+    image = CloudinaryField('listing_image')
     caption = models.CharField(max_length=200, blank=True)
 
     def __str__(self):
