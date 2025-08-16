@@ -86,9 +86,17 @@ class ConversationDetailView(LoginRequiredMixin, DetailView):
                 f"chat_{conversation.pk}",
                 message_data
             )
-            return JsonResponse({'status': 'ok', 'message_data': message_data})
+
+            # Fix: Check if it's an AJAX request before returning JsonResponse
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'ok', 'message_data': message_data})
+            else:
+                return redirect('messaging:conversation_detail', pk=conversation.pk)
         else:
-            return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
+            else:
+                return redirect('messaging:conversation_detail', pk=conversation.pk)
 
 
 @login_required
