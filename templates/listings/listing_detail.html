@@ -12,7 +12,13 @@
                 <div class="carousel-inner">
                     {% for img in listing.images.all %}
                     <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        {% if img.image and img.image.url %}
                         <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ listing.title }}">
+                        {% else %}
+                        <div class="listing-detail-placeholder">
+                            <span>Image Not Available</span>
+                        </div>
+                        {% endif %}
                     </div>
                     {% empty %}
                     <div class="carousel-item active">
@@ -44,7 +50,11 @@
                 <p class="listing-detail-location">{{ listing.city }} • Posted {{ listing.created|timesince }} ago</p>
                 <hr>
                 <div class="listing-detail-seller-info">
+                    {% if listing.seller.profile.avatar and listing.seller.profile.avatar.url %}
                     <img src="{{ listing.seller.profile.avatar.url }}" class="listing-detail-avatar" alt="{{ listing.seller.username }}'s avatar">
+                    {% else %}
+                    <img src="{% static 'images/default_avatar.svg' %}" class="listing-detail-avatar" alt="Default avatar">
+                    {% endif %}
                     <div class="ms-3">
                         <a href="{% url 'accounts:public_profile' username=listing.seller.username %}" class="listing-detail-seller-name">
                             {{ listing.seller.username }}
@@ -106,7 +116,11 @@
 
             {% for review in reviews %}
             <div class="listing-detail-review-card d-flex mb-3">
+                 {% if review.author.profile.avatar and review.author.profile.avatar.url %}
                 <img src="{{ review.author.profile.avatar.url }}" class="listing-detail-review-avatar" alt="{{ review.author.username }}'s avatar">
+                {% else %}
+                <img src="{% static 'images/default_avatar.svg' %}" class="listing-detail-review-avatar" alt="Default avatar">
+                {% endif %}
                 <div class="ms-3">
                     <strong class="text-dark">{{ review.author.username }}</strong>
                     <div class="listing-detail-review-rating">
