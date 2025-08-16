@@ -15,7 +15,7 @@
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom sticky-top">
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top">
   <div class="container-fluid">
     <a class="navbar-brand fw-bold text-primary" href="{% url 'listings:listing_list' %}">CheckoutPH</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -26,20 +26,17 @@
         {% if user.is_authenticated %}
           <li class="nav-item">
             <a class="nav-link" href="{% url 'listings:listing_create' %}">
-              <i class="fas fa-plus-circle me-1"></i> Create Listing
+              <i class="fas fa-plus-circle"></i> Create Listing
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link position-relative" href="{% url 'listings:view_cart' %}">
-              <i class="fas fa-shopping-cart me-1"></i> Cart
-              {% if cart_item_count > 0 %}
-                <span class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">{{ cart_item_count }}</span>
-              {% endif %}
+            <a class="nav-link" href="{% url 'listings:view_cart' %}">
+              <i class="fas fa-shopping-cart"></i> Cart
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'messaging:inbox' %}">
-              <i class="fas fa-inbox me-1"></i> Inbox
+              <i class="fas fa-inbox"></i> Inbox
               {% if unread_message_count > 0 %}
                 <span class="badge bg-danger rounded-pill">{{ unread_message_count }}</span>
               {% endif %}
@@ -56,7 +53,7 @@
           </li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="fas fa-user-circle me-1"></i> {{ user.username }}
+              <i class="fas fa-user-circle"></i> {{ user.username }}
             </a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
               <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">My Profile</a></li>
@@ -69,7 +66,7 @@
                 <form method="post" action="{% url 'logout' %}" class="d-inline">
                   {% csrf_token %}
                   <button type="submit" class="dropdown-item">
-                    <i class="fas fa-sign-out-alt me-1"></i> Logout
+                    <i class="fas fa-sign-out-alt"></i> Logout
                   </button>
                 </form>
               </li>
@@ -80,7 +77,7 @@
             <a class="nav-link" href="{% url 'login' %}">Login</a>
           </li>
           <li class="nav-item">
-            <a class="btn btn-primary ms-2" href="{% url 'accounts:register' %}">Sign Up</a>
+            <a class="btn btn-primary" href="{% url 'accounts:register' %}">Sign Up</a>
           </li>
         {% endif %}
       </ul>

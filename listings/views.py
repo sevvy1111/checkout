@@ -1,17 +1,17 @@
 # listings/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.http import JsonResponse, HttpResponseForbidden
-from django.urls import reverse_lazy, reverse
+from django.urls import reverse
 from django.contrib import messages
-from django.db.models import Sum, F, Avg
+from django.db.models import Sum, F
 
 from .models import Listing, ListingImage, SavedItem, Review, Cart, CartItem, Checkout
-from .forms import ListingForm, ReviewForm, CheckoutForm, OrderStatusForm
+from .forms import ListingForm, ListingImageFormset, ReviewForm, CheckoutForm
 from .filters import ListingFilter
 
 
@@ -24,9 +24,7 @@ class ListingListView(ListView):
     def get_queryset(self):
         queryset = super().get_queryset()
         # Corrected: Removed 'category' from select_related as it is no longer a ForeignKey
-        self.filterset = ListingFilter(self.request.GET, queryset=queryset.select_related('seller').annotate(
-            average_rating=Avg('reviews__rating')
-        ))
+        self.filterset = ListingFilter(self.request.GET, queryset=queryset.select_related('seller'))
         return self.filterset.qs
 
     def get_context_data(self, **kwargs):
@@ -79,57 +77,56 @@ class ListingCreateView(LoginRequiredMixin, CreateView):
     def get_success_url(self):
         return reverse('listings:listing_detail', kwargs={'pk': self.object.pk})
 
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        if self.request.POST:
+            data['formset'] = ListingImageFormset(self.request.POST, self.request.FILES)
+        else:
+            data['formset'] = ListingImageFormset()
+        return data
+
     def form_valid(self, form):
+        context = self.get_context_data()
+        formset = context['formset']
+
         with transaction.atomic():
             form.instance.seller = self.request.user
             self.object = form.save()
-
-            images = self.request.FILES.getlist('images')
-            for image in images:
-                ListingImage.objects.create(listing=self.object, image=image)
+            if formset.is_valid():
+                formset.instance = self.object
+                formset.save()
 
         return super().form_valid(form)
 
 
-class ListingUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+class ListingUpdateView(LoginRequiredMixin, UpdateView):
     model = Listing
     form_class = ListingForm
     template_name = 'listings/listing_update.html'
 
-    def test_func(self):
-        return self.get_object().seller == self.request.user
-
     def get_success_url(self):
         return reverse('listings:listing_detail', kwargs={'pk': self.object.pk})
 
-    def form_valid(self, form):
-        with transaction.atomic():
-            self.object = form.save()
-
-            # Handle deletion of old images
-            images_to_delete = self.request.POST.getlist('images_to_delete')
-            ListingImage.objects.filter(pk__in=images_to_delete).delete()
-
-            # Handle new images
-            new_images = self.request.FILES.getlist('images')
-            for image in new_images:
-                ListingImage.objects.create(listing=self.object, image=image)
-
-        messages.success(self.request, 'Your listing has been updated successfully!')
-        return redirect(self.get_success_url())
-
-
-class ListingDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-    model = Listing
-    template_name = 'listings/listing_confirm_delete.html'
-    success_url = reverse_lazy('accounts:dashboard')
-
-    def test_func(self):
-        return self.get_object().seller == self.request.user
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        if self.request.POST:
+            data['formset'] = ListingImageFormset(self.request.POST, self.request.FILES, instance=self.object)
+        else:
+            data['formset'] = ListingImageFormset(instance=self.object)
+        return data
 
     def form_valid(self, form):
-        messages.success(self.request, f"The listing '{self.object.title}' has been successfully deleted.")
-        return super().form_valid(form)
+        context = self.get_context_data()
+        formset = context['formset']
+
+        if formset.is_valid():
+            with transaction.atomic():
+                self.object = form.save()
+                formset.instance = self.object
+                formset.save()
+            return redirect(self.get_success_url())
+        else:
+            return self.render_to_response(self.get_context_data(form=form))
 
 
 @login_required
@@ -148,9 +145,7 @@ def toggle_save_listing(request, pk):
 
 def filter_listings(request):
     # Corrected: Removed 'category' from select_related
-    filter = ListingFilter(request.GET, queryset=Listing.objects.all().select_related('seller').annotate(
-        average_rating=Avg('reviews__rating')
-    ))
+    filter = ListingFilter(request.GET, queryset=Listing.objects.all().select_related('seller'))
     saved_listing_ids = []
     if request.user.is_authenticated:
         saved_listing_ids = SavedItem.objects.filter(user=request.user).values_list('listing__id', flat=True)
@@ -171,7 +166,6 @@ def mark_listing_as_sold(request, pk):
 
     if request.method == 'POST':
         listing.status = 'sold'
-        listing.stock = 0  # Set stock to 0 when marked as sold
         listing.save()
         return redirect('accounts:dashboard')
 
@@ -238,8 +232,6 @@ def checkout(request):
                     listing = item.listing
                     if listing.stock >= item.quantity:
                         listing.stock -= item.quantity
-                        if listing.stock == 0:
-                            listing.status = 'sold'
                         listing.save()
 
                         # Create a single Checkout object with all the form data

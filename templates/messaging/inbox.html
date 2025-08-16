@@ -1,39 +1,41 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Inbox</h2>
-<hr>
-
-<div class="list-group">
-    {% for conversation in conversations %}
-        <a href="{{ conversation.get_absolute_url }}" class="list-group-item list-group-item-action d-flex align-items-center" data-conversation-pk="{{ conversation.pk }}">
-            {% for participant in conversation.participants.all %}
-                {% if participant != request.user %}
-                    <img src="{{ participant.profile.avatar.url }}" alt="{{ participant.username }}'s avatar" class="rounded-circle me-3" width="50" height="50">
-                    <div class="d-flex flex-column me-auto">
-                        <div class="d-flex justify-content-between w-100">
-                            <h5 class="mb-0 fw-bold">
-                                {{ participant.username }}
-                                {% if conversation.unread_count > 0 %}
-                                    <span class="badge bg-danger rounded-pill">{{ conversation.unread_count }}</span>
+<div class="container my-5">
+    <h1 class="mb-4">Inbox</h1>
+    <div class="list-group rounded shadow-sm">
+        {% for conversation in conversations %}
+            <a href="{{ conversation.get_absolute_url }}" class="list-group-item list-group-item-action d-flex align-items-center p-3" data-conversation-pk="{{ conversation.pk }}">
+                {% for participant in conversation.participants.all %}
+                    {% if participant != request.user %}
+                        <img src="{{ participant.profile.avatar.url }}" alt="{{ participant.username }}'s avatar" class="rounded-circle me-3" width="50" height="50">
+                        <div class="d-flex flex-column me-auto">
+                            <div class="d-flex justify-content-between w-100">
+                                <h5 class="mb-0 fw-bold">
+                                    {{ participant.username }}
+                                    {% if conversation.unread_count > 0 %}
+                                        <span class="badge bg-danger rounded-pill ms-2">{{ conversation.unread_count }}</span>
+                                    {% endif %}
+                                </h5>
+                                <small class="conversation-timestamp text-muted">{{ conversation.updated_at|date:"M j, Y" }}</small>
+                            </div>
+                            <p class="mb-0 conversation-last-message text-muted small">
+                                {% if conversation.messages.first %}
+                                    {{ conversation.messages.first.text|truncatechars:40 }}
+                                {% else %}
+                                    No messages yet.
                                 {% endif %}
-                            </h5>
-                            <small class="conversation-timestamp text-muted">{{ conversation.updated_at|date:"M j, Y" }}</small>
+                            </p>
                         </div>
-                        <p class="mb-0 conversation-last-message text-muted small">
-                            {% if conversation.messages.first %}
-                                {{ conversation.messages.first.text|truncatechars:40 }}
-                            {% else %}
-                                No messages yet.
-                            {% endif %}
-                        </p>
-                    </div>
-                {% endif %}
-            {% endfor %}
-        </a>
-    {% empty %}
-        <p class="text-muted">You have no conversations.</p>
-    {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            </a>
+        {% empty %}
+            <div class="alert alert-info text-center m-4" role="alert">
+                You have no conversations.
+            </div>
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}
 
@@ -42,7 +44,6 @@
     document.addEventListener('DOMContentLoaded', function() {
         const conversationsList = document.querySelector('.list-group');
 
-        // WebSocket for real-time updates to the inbox
         const inboxSocket = new WebSocket(
             'ws://'
             + window.location.host
@@ -52,11 +53,9 @@
         inboxSocket.onmessage = function(e) {
             const data = JSON.parse(e.data);
 
-            // Check if the notification is a new message
             if (data.type === 'new_message' && data.conversation_pk) {
                 const conversationLink = conversationsList.querySelector(`[data-conversation-pk="${data.conversation_pk}"]`);
                 if (conversationLink) {
-                    // Update the existing conversation item
                     const lastMessageElement = conversationLink.querySelector('.conversation-last-message');
                     if (lastMessageElement) {
                         lastMessageElement.textContent = data.message_text.substring(0, 40) + '...';
@@ -65,14 +64,8 @@
                     if (timestampElement) {
                         timestampElement.textContent = data.timestamp;
                     }
-
-                    // Move the conversation to the top of the list
                     conversationsList.prepend(conversationLink);
-
                 } else {
-                    // This is a new conversation. A full page reload is required to show it.
-                    // For a more advanced implementation, you could dynamically create the new HTML element here.
-                    // For simplicity, we'll suggest a reload.
                     window.location.reload();
                 }
             }
