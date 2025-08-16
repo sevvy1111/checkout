@@ -10,43 +10,51 @@
     {% if cart_items %}
     <div class="row gx-lg-5">
         <div class="col-lg-8">
-            {% for item in cart_items %}
-            <div class="cart-item-card mb-3">
-                <div class="row g-0">
-                    <div class="col-md-3">
-                        <img src="{{ item.listing.images.first.image.url }}" class="img-fluid rounded-start cart-item-image" alt="{{ item.listing.title }}">
-                    </div>
-                    <div class="col-md-9">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <h5 class="card-title"><a href="{{ item.listing.get_absolute_url }}" class="text-decoration-none text-dark">{{ item.listing.title }}</a></h5>
-                                <form action="{% url 'listings:remove_from_cart' item.pk %}" method="post">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn-close"></button>
-                                </form>
-                            </div>
-                            <p class="card-text"><small class="text-muted">{{ item.listing.city }}</small></p>
-                            <div class="d-flex justify-content-between align-items-center mt-3">
-                                <p class="listing-card-price mb-0">₱{{ item.listing.price|philippine_currency }}</p>
-                                <div class="quantity-control d-flex align-items-center">
-                                    <form action="{% url 'listings:update_cart_item' item.pk %}" method="post" class="d-inline">
+            <div class="cart-items-container">
+                {% for item in cart_items %}
+                <div class="cart-item-card mb-3">
+                    <div class="row g-0 align-items-center">
+                        <div class="col-md-3 col-4">
+                            {% if item.listing.images.first %}
+                            <img src="{{ item.listing.images.first.image.url }}" class="cart-item-image" alt="{{ item.listing.title }}">
+                            {% else %}
+                            <div class="cart-item-image-placeholder">No Image</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-9 col-8">
+                            <div class="card-body">
+                                <a href="{{ item.listing.get_absolute_url }}" class="cart-item-title">{{ item.listing.title }}</a>
+                                <p class="text-muted mb-1">{{ item.listing.city }}</p>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <div class="d-flex align-items-center">
+                                        <p class="cart-item-price mb-0 me-3">₱{{ item.listing.price|philippine_currency }}</p>
+                                        <div class="quantity-control d-flex align-items-center">
+                                            <form action="{% url 'listings:update_cart_item' item.pk %}" method="post" class="d-inline-flex align-items-center">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="decrease">
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary">-</button>
+                                            </form>
+                                            <span class="mx-2 fw-bold">{{ item.quantity }}</span>
+                                            <form action="{% url 'listings:update_cart_item' item.pk %}" method="post" class="d-inline-flex align-items-center">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="increase">
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary">+</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    <form action="{% url 'listings:remove_from_cart' item.pk %}" method="post">
                                         {% csrf_token %}
-                                        <input type="hidden" name="action" value="decrease">
-                                        <button type="submit" class="btn btn-sm btn-outline-secondary">-</button>
-                                    </form>
-                                    <span class="mx-2 fw-bold">{{ item.quantity }}</span>
-                                    <form action="{% url 'listings:update_cart_item' item.pk %}" method="post" class="d-inline">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="action" value="increase">
-                                        <button type="submit" class="btn btn-sm btn-outline-secondary">+</button>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
                                     </form>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
         <div class="col-lg-4">
             <div class="order-summary-card">
@@ -55,24 +63,24 @@
                     <span>Subtotal</span>
                     <span class="fw-bold">₱{{ total_price|philippine_currency }}</span>
                 </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Shipping</span>
+                    <span class="text-muted">Calculated at checkout</span>
+                </div>
                 <hr>
                 <div class="d-flex justify-content-between fw-bold mb-3">
                     <span>Total</span>
                     <span>₱{{ total_price|philippine_currency }}</span>
                 </div>
-                <div class="d-grid">
-                    <a href="{% url 'listings:checkout' %}" class="btn btn-primary btn-lg">Proceed to Checkout</a>
-                </div>
+                <a href="{% url 'listings:checkout' %}" class="btn btn-primary btn-lg w-100">Proceed to Checkout</a>
             </div>
         </div>
     </div>
     {% else %}
-    <div class="text-center py-5 card">
-        <div class="card-body">
-            <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
-            <p class="lead">Your cart is empty.</p>
-            <a href="{% url 'listings:listing_list' %}" class="btn btn-primary mt-3">Continue Shopping</a>
-        </div>
+    <div class="text-center py-5">
+        <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+        <p class="lead">Your cart is empty.</p>
+        <a href="{% url 'listings:listing_list' %}" class="btn btn-primary mt-3">Continue Shopping</a>
     </div>
     {% endif %}
 </div>
