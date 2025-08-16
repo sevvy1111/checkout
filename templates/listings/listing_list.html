@@ -4,18 +4,20 @@
 
 {% block content %}
 <div class="row">
-    <aside class="col-lg-2">
-        <div class="filter-sidebar">
-            <h4 class="mb-3">Filters</h4>
-            <form id="filter-form">
-                {{ filter.form|crispy }}
-            </form>
+    <aside class="col-lg-3">
+        <div class="filter-sidebar card">
+            <div class="card-body">
+                <h4 class="mb-4">Filters</h4>
+                <form id="filter-form">
+                    {{ filter.form|crispy }}
+                </form>
+            </div>
         </div>
     </aside>
 
-    <main class="col-lg-10">
-        <h2 class="mb-3">Today's Picks</h2>
-        <div id="listings-container" class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-2">
+    <main class="col-lg-9">
+        <h2 class="mb-4">Today's Picks</h2>
+        <div id="listings-container" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
             {% include 'listings/partials/listings_grid.html' %}
         </div>
     </main>

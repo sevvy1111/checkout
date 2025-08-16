@@ -3,52 +3,48 @@
 {% load static %}
 
 {% block content %}
-<div class="container my-5 profile-container">
-    <div class="row gx-lg-5">
-        <div class="col-lg-4 mb-4 mb-lg-0">
-            <div class="profile-info-card">
-                <img src="{{ user.profile.display_avatar_url }}" class="profile-avatar mb-3" alt="{{ user.username }}'s profile image">
-                <h4 class="profile-name">{{ user.username }}</h4>
-                <p class="text-muted small mb-1">
-                    {% if user.profile.phone %}{{ user.profile.phone }}{% else %}No phone provided{% endif %}
-                </p>
-                <p class="profile-bio">{{ user.profile.bio|default:"No bio yet."|linebreaksbr }}</p>
+<div class="container my-5">
+    <div class="profile-container">
+        <div class="row gx-lg-5">
+            <div class="col-lg-4 mb-4 mb-lg-0">
+                <div class="profile-info-card">
+                    <img src="{{ user.profile.display_avatar_url }}" class="profile-avatar" alt="{{ user.username }}'s profile image">
+                    <h4 class="profile-name text-white">{{ user.username }}</h4>
+                    <p class="text-white-50 small mb-1">
+                        {% if user.profile.phone %}{{ user.profile.phone }}{% else %}No phone provided{% endif %}
+                    </p>
+                    <p class="profile-bio text-white-50">{{ user.profile.bio|default:"No bio yet."|linebreaksbr }}</p>
+                </div>
             </div>
-        </div>
-        <div class="col-lg-8">
-            <h3>Listings by {{ user.username }}</h3>
-            <hr>
-            {% if user_listings %}
-            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-2 g-4">
-                {% for listing in user_listings %}
-                <div class="col">
-                    <div class="listing-card">
-                        <a href="{{ listing.get_absolute_url }}">
+            <div class="col-lg-8">
+                <h3>Listings by {{ user.username }}</h3>
+                <hr>
+                {% if user_listings %}
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-2 g-4">
+                    {% for listing in user_listings %}
+                    <div class="col">
+                        <a href="{{ listing.get_absolute_url }}" class="card listing-card text-decoration-none">
                             <div class="listing-card-image-container">
                                 {% if listing.images.first %}
                                 <img src="{{ listing.images.first.image.url }}" class="listing-card-image" alt="{{ listing.title }}">
                                 {% else %}
-                                <div class="listing-card-placeholder">
+                                <div class="listing-card-image d-flex align-items-center justify-content-center bg-light">
                                     <span>No Image</span>
                                 </div>
                                 {% endif %}
                             </div>
-                        </a>
-                        <div class="listing-card-body">
-                            <div class="listing-card-header">
-                                <a href="{{ listing.get_absolute_url }}" class="text-decoration-none text-dark">
-                                    <h5 class="listing-card-title">{{ listing.title }}</h5>
-                                </a>
-                                <span class="listing-card-price">₱{{ listing.price|philippine_currency }}</span>
+                            <div class="listing-card-body">
+                                <h5 class="listing-card-title">{{ listing.title }}</h5>
+                                <p class="listing-card-price">₱{{ listing.price|philippine_currency }}</p>
                             </div>
-                        </div>
+                        </a>
                     </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+                {% else %}
+                <p class="text-muted text-center">{{ user.username }} has no listings yet.</p>
+                {% endif %}
             </div>
-            {% else %}
-            <p class="text-muted text-center">{{ user.username }} has no listings yet.</p>
-            {% endif %}
         </div>
     </div>
 </div>
