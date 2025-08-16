@@ -5,19 +5,26 @@ import os
 import dj_database_url
 import dotenv
 from django.core.exceptions import ImproperlyConfigured
-import cloudinary # Keep the import
+import cloudinary
 
 dotenv.load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-cym2oo+i$d*-9aj=eazmaqbv$6z*ykaa7txeoz3xc$iiz19)!(')
+# --- SECURITY ---
+# Raise an error if SECRET_KEY is not set in the environment
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    raise ImproperlyConfigured("The SECRET_KEY environment variable must be set.")
 
+# Default DEBUG to False for safety
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+
 
 ALLOWED_HOSTS = ['checkoutph.onrender.com', 'localhost', '127.0.0.1']
 CSRF_TRUSTED_ORIGINS = ['https://checkoutph.onrender.com']
 
+# --- INSTALLED APPS & MIDDLEWARE ---
 INSTALLED_APPS = [
     'daphne',
     'django.contrib.admin',
@@ -51,6 +58,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'marketplace.urls'
 
+# --- TEMPLATES ---
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -69,7 +77,9 @@ TEMPLATES = [
     },
 ]
 
+# --- ASYNC & WSGI ---
 ASGI_APPLICATION = 'marketplace.asgi.application'
+WSGI_APPLICATION = 'marketplace.wsgi.application'
 
 CHANNEL_LAYERS = {
     "default": {
@@ -80,8 +90,7 @@ CHANNEL_LAYERS = {
     },
 }
 
-WSGI_APPLICATION = 'marketplace.wsgi.application'
-
+# --- DATABASE ---
 DATABASES = {
     'default': dj_database_url.config(
         default='sqlite:///db.sqlite3',
@@ -89,28 +98,21 @@ DATABASES = {
     )
 }
 
+# --- AUTHENTICATION ---
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
+# --- INTERNATIONALIZATION ---
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-
-# Static files
+# --- STATIC & MEDIA FILES ---
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
@@ -118,21 +120,26 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
-# Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Cloudinary settings for production
+# --- CLOUDINARY (Production) ---
 if not DEBUG:
+    CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME')
+    CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY')
+    CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET')
+
+    if not all([CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET]):
+        raise ImproperlyConfigured("Cloudinary credentials must be set in production.")
 
     CLOUDINARY_STORAGE = {
-        'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
-        'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
-        'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET')
+        'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
+        'API_KEY': CLOUDINARY_API_KEY,
+        'API_SECRET': CLOUDINARY_API_SECRET
     }
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
-
+# --- MISC ---
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 LOGIN_REDIRECT_URL = '/'
