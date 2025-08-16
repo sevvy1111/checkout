@@ -288,3 +288,16 @@ def update_cart_item(request, pk):
             messages.error(request, "Invalid quantity.")
 
     return redirect('listings:view_cart')
+
+
+@login_required
+def invoice_view(request, pk):
+    checkout = get_object_or_404(Checkout, pk=pk, listing__seller=request.user)
+
+    total_price = checkout.listing.price * checkout.quantity
+
+    context = {
+        'checkout': checkout,
+        'total_price': total_price,
+    }
+    return render(request, 'listings/invoice.html', context)

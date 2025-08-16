@@ -22,4 +22,7 @@ urlpatterns = [
     path('cart/remove/<int:pk>/', views.remove_from_cart, name='remove_from_cart'),
     path('cart/update/<int:pk>/', views.update_cart_item, name='update_cart_item'),
     path('checkout/', views.checkout, name='checkout'),
+
+    # URL for invoice generation
+    path('checkout/<int:pk>/invoice/', views.invoice_view, name='invoice'),
 ]
