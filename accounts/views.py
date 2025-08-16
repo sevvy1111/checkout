@@ -4,11 +4,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
 from django.contrib.auth.models import User
 from django.contrib import messages
-from .forms import RegistrationForm, ProfileForm, PhoneVerificationForm
-from listings.models import Listing, Review, SavedItem, Checkout
-from listings.forms import OrderStatusForm
+from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db.models import Count
 import random
+
+from listings.models import Listing, Review, SavedItem, Checkout
+from listings.forms import OrderStatusForm
+from .forms import RegistrationForm, ProfileForm, PhoneVerificationForm
 
 
 @login_required
@@ -118,11 +120,13 @@ def verify_phone_view(request):
         form = PhoneVerificationForm()
     return render(request, 'accounts/verify_phone.html', {'form': form})
 
+
 # New view for Order History
 @login_required
 def order_history_view(request):
     checkouts = Checkout.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'accounts/order_history.html', {'checkouts': checkouts})
+
 
 # New view for Seller Orders
 @login_required
@@ -139,10 +143,12 @@ def update_order_status_view(request, pk):
         form = OrderStatusForm(request.POST, instance=checkout_item)
         if form.is_valid():
             form.save()
-            messages.success(request, f"Order for '{checkout_item.listing.title}' has been updated to '{checkout_item.status}'.")
+            messages.success(request,
+                             f"Order for '{checkout_item.listing.title}' has been updated to '{checkout_item.status}'.")
         else:
             messages.error(request, "Invalid form submission.")
     return redirect('accounts:seller_orders')
+
 
 @login_required
 def update_order_status_view(request, pk):
@@ -151,7 +157,22 @@ def update_order_status_view(request, pk):
         form = OrderStatusForm(request.POST, instance=checkout_item)
         if form.is_valid():
             form.save()
-            messages.success(request, f"Order for '{checkout_item.listing.title}' has been updated to '{checkout_item.status}'.")
+            messages.success(request,
+                             f"Order for '{checkout_item.listing.title}' has been updated to '{checkout_item.status}'.")
         else:
             messages.error(request, "Invalid form submission.")
     return redirect('accounts:seller_orders')
+
+
+# New view for the buyer's receipt
+@login_required
+def receipt_view(request, pk):
+    receipt = get_object_or_404(Checkout, pk=pk, user=request.user)
+
+    total_price = receipt.listing.price * receipt.quantity
+
+    context = {
+        'receipt': receipt,
+        'total_price': total_price,
+    }
+    return render(request, 'accounts/receipt.html', context)

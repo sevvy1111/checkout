@@ -32,6 +32,9 @@
                             <small class="text-muted">
                                 Shipping to: {{ checkout.full_name }}, {{ checkout.shipping_address }}, {{ checkout.shipping_city }}
                             </small>
+                            <div class="mt-2">
+                                <a href="{% url 'accounts:receipt' pk=checkout.pk %}" class="btn btn-sm btn-outline-info">View Receipt</a>
+                            </div>
                         </div>
                     {% endfor %}
                 </div>

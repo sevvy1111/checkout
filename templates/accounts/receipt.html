@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load listings_tags %}
+
+{% block title %}Receipt #{{ receipt.pk }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="card shadow-sm">
+        <div class="card-header bg-success text-white">
+            <h2 class="mb-0">Receipt #{{ receipt.pk }}</h2>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <strong>Seller:</strong>
+                    <p>{{ receipt.listing.seller.username }}</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <strong>Date:</strong>
+                    <p>{{ receipt.created_at|date:"F j, Y" }}</p>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <strong>Shipped To:</strong>
+                    <p>{{ receipt.full_name }}<br>
+                    {{ receipt.shipping_address }}<br>
+                    {{ receipt.shipping_city }}, {{ receipt.shipping_postal_code }}</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <strong>Payment Method:</strong>
+                    <p>Cash on Delivery</p>
+                </div>
+            </div>
+
+            <h4 class="mt-4">Order Summary</h4>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ receipt.listing.title }}</td>
+                        <td>₱{{ receipt.listing.price|philippine_currency }}</td>
+                        <td>{{ receipt.quantity }}</td>
+                        <td>₱{{ total_price|philippine_currency }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="d-flex justify-content-end mt-4">
+                <div class="text-end">
+                    <h5>Subtotal: ₱{{ total_price|philippine_currency }}</h5>
+                    <h4 class="fw-bold text-success">Grand Total: ₱{{ total_price|philippine_currency }}</h4>
+                </div>
+            </div>
+            
+            {% if receipt.gift_note %}
+            <hr>
+            <div class="mt-4">
+                <strong>Gift Note:</strong>
+                <p class="border p-3 rounded bg-light">{{ receipt.gift_note }}</p>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

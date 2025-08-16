@@ -15,6 +15,8 @@ urlpatterns = [
     path('seller-orders/', views.seller_orders_view, name='seller_orders'),
     path('seller-orders/update-status/<int:pk>/', views.update_order_status_view, name='update_order_status'),
 
+    # New URL for the buyer's receipt
+    path('order-history/<int:pk>/receipt/', views.receipt_view, name='receipt'),
 
     # New URLs for phone verification
     path('verify-phone/', views.verify_phone_view, name='verify_phone'),
