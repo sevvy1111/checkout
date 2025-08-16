@@ -137,7 +137,8 @@ def send_message(request, username):
                 f"chat_{conversation.pk}",
                 message_data
             )
-            return JsonResponse({'status': 'ok', 'conversation_pk': conversation.pk})
+            # Change this line to redirect to the conversation detail page
+            return redirect('messaging:conversation_detail', pk=conversation.pk)
         else:
             return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
     else:
