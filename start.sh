@@ -1,19 +1,16 @@
 #!/usr/bin/env bash
-# Exit on first error
-set -e
+# exit on error
+set -o errexit
 
-# Install Python dependencies from requirements.txt
-echo "Installing dependencies..."
-pip install -r requirements.txt
+# Force a clean installation of dependencies
+pip install --upgrade pip
+pip install --no-cache-dir --force-reinstall -r requirements.txt
 
 # Run database migrations
-echo "Running migrations..."
-python manage.py migrate --noinput
+python manage.py migrate
 
 # Collect static files
-echo "Collecting static files..."
-python manage.py collectstatic --noinput
+python manage.py collectstatic --no-input
 
-# Start the Daphne ASGI server
-echo "Starting Daphne server..."
-DJANGO_SETTINGS_MODULE=marketplace.settings daphne -b 0.0.0.0 -p 8000 marketplace.asgi:application
+# Start the Daphne server
+daphne -b 0.0.0.0 -p 8000 marketplace.asgi:application

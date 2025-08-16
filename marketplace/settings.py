@@ -5,7 +5,7 @@ import os
 import dj_database_url
 import dotenv
 from django.core.exceptions import ImproperlyConfigured
-import cloudinary # <-- Add this import
+import cloudinary
 
 dotenv.load_dotenv()
 
@@ -124,26 +124,12 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Cloudinary settings for production
 if not DEBUG:
-    CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME')
-    CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY')
-    CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET')
-
-    if not all([CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET]):
-        raise ImproperlyConfigured("Cloudinary credentials are not fully set in environment variables.")
-
-    # Explicitly configure the core cloudinary library
+    # This is the single source of truth for Cloudinary configuration.
     cloudinary.config(
-        cloud_name=CLOUDINARY_CLOUD_NAME,
-        api_key=CLOUDINARY_API_KEY,
-        api_secret=CLOUDINARY_API_SECRET
+        cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
+        api_key=os.environ.get('CLOUDINARY_API_KEY'),
+        api_secret=os.environ.get('CLOUDINARY_API_SECRET')
     )
-
-    # Configure the Django storage backend
-    CLOUDINARY_STORAGE = {
-        'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
-        'API_KEY': CLOUDINARY_API_KEY,
-        'API_SECRET': CLOUDINARY_API_SECRET
-    }
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 
