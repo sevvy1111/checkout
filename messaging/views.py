@@ -67,8 +67,6 @@ class ConversationDetailView(LoginRequiredMixin, DetailView):
             message.receiver = recipient
             message.save()
 
-            # Broadcast the new message via WebSocket
-            channel_layer = get_channel_layer()
             # refactor: Use timezone.localtime for a more robust, locale-aware approach
             timestamp_format = '%b. %d, %Y, %I:%M %p'
             local_time = timezone.localtime(message.timestamp)
@@ -82,11 +80,13 @@ class ConversationDetailView(LoginRequiredMixin, DetailView):
                 "temp_id": request.POST.get('temp_id')
             }
 
+            # Broadcast the new message via WebSocket
+            channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 f"chat_{conversation.pk}",
                 message_data
             )
-            return JsonResponse({'status': 'ok'})
+            return JsonResponse({'status': 'ok', 'message_data': message_data})
         else:
             return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
 
