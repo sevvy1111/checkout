@@ -108,8 +108,8 @@
     document.addEventListener('DOMContentLoaded', function() {
         const notificationSocket = new WebSocket(
             'ws://'
-            + window.location.host
-            + '/ws/notifications/'
+            + window.location.host.split(':')[0]
+            + ':8001/ws/notifications/'
         );
 
         const notificationList = document.getElementById('notification-list');

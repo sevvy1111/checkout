@@ -1,0 +1,21 @@
+/* listings/static/listings/css/listing_list.css */
+
+.listing-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.listing-card .card-img {
+    height: 200px;
+    object-fit: cover;
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+@media (max-width: 768px) {
+    .listing-card .card-img {
+        border-bottom-left-radius: 0;
+        border-top-right-radius: 8px;
+    }
+}
