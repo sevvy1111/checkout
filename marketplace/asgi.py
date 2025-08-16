@@ -3,16 +3,19 @@ import os
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
-# The import statement has been moved inside ProtocolTypeRouter to ensure Django's apps are loaded.
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'marketplace.settings')
 
+# The `get_asgi_application()` call is essential for loading Django's app registry
+django_asgi_app = get_asgi_application()
+
 application = ProtocolTypeRouter({
-    "http": get_asgi_application(),
+    "http": django_asgi_app,
     "websocket": AuthMiddlewareStack(
         URLRouter(
-            # This import will be called after Django's app registry is ready.
-            messaging.routing.websocket_urlpatterns
+            # This import needs to be inside the URLRouter to be executed after the app registry is ready.
+            # Make sure you remove the import from the top of the file.
+            (lambda: messaging.routing.websocket_urlpatterns)()
         )
     ),
 })
