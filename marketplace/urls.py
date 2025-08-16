@@ -29,5 +29,5 @@ urlpatterns = [
     path('msgs/', include(('messaging.urls', 'messaging'), namespace='messaging')),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# This is the production-ready way to handle media files.
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
