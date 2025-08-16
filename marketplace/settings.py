@@ -1,17 +1,15 @@
-# marketplace/settings.py
 from pathlib import Path
 import os
-import dj_database_url  # You will need to install this
+import dj_database_url
+from crispy_forms.settings import CRISPY_TEMPLATE_PACK
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-cym2oo+i$d*-9aj=eazmaqbv$6z*ykaa7txeoz3xc$iiz19)!(')
 
-# In production, DEBUG should be False.
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-# Add your Render URL to ALLOWED_HOSTS
-ALLOWED_HOSTS = ['your-render-app-name.onrender.com']
+ALLOWED_HOSTS = ['checkoutph.onrender.com', 'localhost', '127.0.0.1']
 
 INSTALLED_APPS = [
     'daphne',
@@ -33,6 +31,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -61,10 +60,8 @@ TEMPLATES = [
     },
 ]
 
-# Point to the channels routing configuration
 ASGI_APPLICATION = 'marketplace.asgi.application'
 
-# Configure the channel layer to use Redis
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
@@ -105,8 +102,11 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 LOGIN_REDIRECT_URL = '/'
