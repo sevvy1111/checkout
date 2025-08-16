@@ -63,7 +63,6 @@
         const messageInput = document.getElementById('chat-message-input');
         const imageInput = document.getElementById('chat-image-input');
 
-        // This function will handle rendering a new message on the page
         function renderMessage(data) {
             const isSender = data.sender === currentUsername;
             let messageContent = `<p class="mb-0">${data.message}</p>`;
@@ -101,13 +100,11 @@
             const data = JSON.parse(e.data);
             const tempId = data.temp_id;
 
-            // Remove the placeholder message if it exists
             const placeholder = chatLog.querySelector(`[data-temp-id="${tempId}"]`);
             if (placeholder) {
                 placeholder.remove();
             }
 
-            // Render the final message received from the WebSocket
             renderMessage(data);
         };
 
@@ -115,99 +112,101 @@
             console.error('Chat socket closed unexpectedly');
         };
 
-        // Handle form submission
-        chatForm.addEventListener('submit', function(e) {
+        chatForm.addEventListener('submit', async function(e) {
             e.preventDefault();
+
             const formData = new FormData(chatForm);
             const messageText = messageInput.value.trim();
             const messageImage = imageInput.files[0];
             const tempId = Date.now();
             formData.append('temp_id', tempId);
 
-            if (messageText !== '' || messageImage) {
-                // Instantly render a pending message to provide feedback (Optimistic UI)
-                let pendingMessageContent = `<p class="mb-0">${messageText}</p>`;
-                const pendingMessageElement = document.createElement('div');
-                pendingMessageElement.className = `d-flex mb-2 justify-content-end`;
-                pendingMessageElement.dataset.tempId = tempId;
+            if (messageText === '' && !messageImage) {
+                return;
+            }
 
-                if (messageImage) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const tempImageHtml = `<img src="${e.target.result}" class="img-fluid my-2" style="max-width: 250px;">`;
-                        pendingMessageElement.innerHTML = `
-                            <div class="d-flex align-items-end flex-row-reverse">
-                                <img src="${currentUserAvatarUrl}" class="rounded-circle ms-2" width="30" height="30">
-                                <div class="p-2 rounded bg-primary text-white">
-                                    <strong>${currentUsername}</strong>
-                                    ${tempImageHtml}
-                                    ${pendingMessageContent}
-                                    <small class="text-muted-custom">Sending...</small>
-                                </div>
-                            </div>
-                        `;
-                    }
-                    reader.readAsDataURL(messageImage);
-                } else {
+            // Optimistic UI update: Instantly render a pending message
+            const pendingMessageElement = document.createElement('div');
+            pendingMessageElement.className = `d-flex mb-2 justify-content-end`;
+            pendingMessageElement.dataset.tempId = tempId;
+
+            let pendingMessageContent = `<p class="mb-0">${messageText}</p>`;
+            if (messageImage) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const tempImageHtml = `<img src="${e.target.result}" class="img-fluid my-2" style="max-width: 250px;">`;
                     pendingMessageElement.innerHTML = `
                         <div class="d-flex align-items-end flex-row-reverse">
                             <img src="${currentUserAvatarUrl}" class="rounded-circle ms-2" width="30" height="30">
                             <div class="p-2 rounded bg-primary text-white">
                                 <strong>${currentUsername}</strong>
+                                ${tempImageHtml}
                                 ${pendingMessageContent}
                                 <small class="text-muted-custom">Sending...</small>
                             </div>
                         </div>
                     `;
-                }
+                };
+                reader.readAsDataURL(messageImage);
+            } else {
+                pendingMessageElement.innerHTML = `
+                    <div class="d-flex align-items-end flex-row-reverse">
+                        <img src="${currentUserAvatarUrl}" class="rounded-circle ms-2" width="30" height="30">
+                        <div class="p-2 rounded bg-primary text-white">
+                            <strong>${currentUsername}</strong>
+                            ${pendingMessageContent}
+                            <small class="text-muted-custom">Sending...</small>
+                        </div>
+                    </div>
+                `;
+            }
 
-                chatLog.appendChild(pendingMessageElement);
-                chatLog.scrollTop = chatLog.scrollHeight;
+            chatLog.appendChild(pendingMessageElement);
+            chatLog.scrollTop = chatLog.scrollHeight;
+            messageInput.value = '';
+            imageInput.value = '';
 
 
-                fetch(chatForm.action, {
+            // Send the message via HTTP POST
+            try {
+                const response = await fetch(chatForm.action, {
                     method: 'POST',
                     body: formData,
                     headers: {
                         'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
                     }
-                })
-                .then(response => {
-                    if (response.ok) {
-                        return response.json();
-                    } else {
-                        console.error('Failed to send message via HTTP');
-                        return null;
-                    }
-                })
-                .then(data => {
-                    if (data && data.status === 'ok') {
-                        // Remove the placeholder message
-                        const placeholder = chatLog.querySelector(`[data-temp-id="${tempId}"]`);
-                        if (placeholder) {
-                            placeholder.remove();
-                        }
-                        // Render the message with the data from the HTTP response
-                        renderMessage(data.message_data);
-                        messageInput.value = '';
-                        imageInput.value = '';
-                    } else {
-                        console.error('Failed to send message:', data.errors);
-                        // Re-add the placeholder or show an error
-                        const placeholder = chatLog.querySelector(`[data-temp-id="${tempId}"]`);
-                        if (placeholder) {
-                            placeholder.remove();
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    // Handle network errors
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to send message via HTTP');
+                }
+
+                const data = await response.json();
+
+                if (data.status === 'ok') {
+                    // Message was successfully sent and is now being handled by the WebSocket
+                    // The WebSocket consumer will send the final message back
+                    console.log('Message sent successfully. Awaiting WebSocket confirmation...');
+                    // The optimistic UI element will be removed by the WebSocket handler.
+                } else {
+                    console.error('Failed to send message:', data.errors);
+                    // On failure, remove the optimistic UI element
                     const placeholder = chatLog.querySelector(`[data-temp-id="${tempId}"]`);
                     if (placeholder) {
                         placeholder.remove();
                     }
-                });
+                    // Re-render the form and display an error message
+                    chatForm.reset();
+                    alert('Failed to send message. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                // On a network error, remove the optimistic UI element
+                const placeholder = chatLog.querySelector(`[data-temp-id="${tempId}"]`);
+                if (placeholder) {
+                    placeholder.remove();
+                }
+                alert('Network error. Please check your connection and try again.');
             }
         });
     });
