@@ -12,6 +12,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-cym2oo+i$d*-9aj=eazma
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ['checkoutph.onrender.com', 'localhost', '127.0.0.1']
+CSRF_TRUSTED_ORIGINS = ['https://checkoutph.onrender.com']
 
 INSTALLED_APPS = [
     'daphne',
@@ -29,6 +30,7 @@ INSTALLED_APPS = [
     'accounts',
     'listings',
     'messaging',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -109,6 +111,22 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
+# Production media file settings with S3
+if not DEBUG:
+    AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+    AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
+    AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME')
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = 'public-read'
+    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+    # You can remove the MEDIA_URL setting for debug mode, as it's not needed.
+    # The `static` function in urls.py is not used in production.
+    # We will keep the MEDIA_ROOT for local development.
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 

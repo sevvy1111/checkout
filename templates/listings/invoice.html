@@ -1,75 +1,78 @@
-{% extends 'base.html' %}
-{% load static %}
-{% load listings_tags %}
+{% extends "base.html" %}
 
-{% block title %}Invoice #{{ checkout.pk }}{% endblock %}
+{% block title %}Invoice #{{ order.id }}{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-    <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
-            <h2 class="mb-0">Invoice #{{ checkout.pk }}</h2>
+<div class="container my-5 invoice-container">
+    <div class="invoice-header mb-4 d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="mb-0">Invoice</h1>
+            <p class="text-muted mb-0">#{{ order.id }}</p>
         </div>
-        <div class="card-body">
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <strong>Sold by:</strong>
-                    <p>{{ checkout.listing.seller.username }}</p>
+        <div>
+            <p class="mb-0 text-end">Date: {{ order.created_at|date:"F j, Y" }}</p>
+        </div>
+    </div>
+
+    <div class="row invoice-details mb-4">
+        <div class="col-md-6">
+            <div class="card p-3 mb-3 h-100">
+                <h6 class="text-muted">Billed To</h6>
+                <p class="mb-0 fw-bold">{{ order.full_name }}</p>
+                <p class="mb-0">{{ order.street_address }}</p>
+                <p class="mb-0">{{ order.city }}, {{ order.province }}</p>
+                <p class="mb-0">{{ order.postal_code }}</p>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card p-3 mb-3 h-100">
+                <h6 class="text-muted">Payment Method</h6>
+                <p class="mb-0 fw-bold">{{ order.payment_method }}</p>
+                <p class="mb-0 text-success">Order Status: {{ order.status }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="invoice-table-container mb-4">
+        <table class="table table-borderless invoice-table">
+            <thead>
+                <tr>
+                    <th scope="col">Item</th>
+                    <th scope="col" class="text-end">Price</th>
+                    <th scope="col" class="text-end">Quantity</th>
+                    <th scope="col" class="text-end">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items.all %}
+                <tr>
+                    <td>{{ item.listing.title }}</td>
+                    <td class="text-end">₱{{ item.listing.price|philippine_currency }}</td>
+                    <td class="text-end">{{ item.quantity }}</td>
+                    <td class="text-end fw-bold">₱{{ item.total_price|philippine_currency }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="row justify-content-end">
+        <div class="col-md-6">
+            <div class="invoice-summary-card p-4">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal</span>
+                    <span>₱{{ order.total_price|philippine_currency }}</span>
                 </div>
-                <div class="col-md-6 text-md-end">
-                    <strong>Date:</strong>
-                    <p>{{ checkout.created_at|date:"F j, Y" }}</p>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Shipping</span>
+                    <span>₱{{ order.shipping_fee|philippine_currency }}</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between fw-bold fs-5">
+                    <span>Grand Total</span>
+                    <span>₱{{ order.grand_total|philippine_currency }}</span>
                 </div>
             </div>
-
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <strong>Bill To:</strong>
-                    <p>{{ checkout.full_name }}<br>
-                    {{ checkout.shipping_address }}<br>
-                    {{ checkout.shipping_city }}, {{ checkout.shipping_postal_code }}</p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <strong>Payment Method:</strong>
-                    <p>Cash on Delivery</p>
-                </div>
-            </div>
-
-            <h4 class="mt-4">Order Summary</h4>
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Item</th>
-                        <th>Price</th>
-                        <th>Quantity</th>
-                        <th>Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>{{ checkout.listing.title }}</td>
-                        <td>₱{{ checkout.listing.price|philippine_currency }}</td>
-                        <td>{{ checkout.quantity }}</td>
-                        <td>₱{{ total_price|philippine_currency }}</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <div class="d-flex justify-content-end mt-4">
-                <div class="text-end">
-                    <h5>Subtotal: ₱{{ total_price|philippine_currency }}</h5>
-                    <h4 class="fw-bold text-success">Grand Total: ₱{{ total_price|philippine_currency }}</h4>
-                </div>
-            </div>
-            
-            {% if checkout.gift_note %}
-            <hr>
-            <div class="mt-4">
-                <strong>Gift Note:</strong>
-                <p class="border p-3 rounded bg-light">{{ checkout.gift_note }}</p>
-            </div>
-            {% endif %}
-
         </div>
     </div>
 </div>

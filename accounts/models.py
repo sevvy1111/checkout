@@ -1,11 +1,12 @@
 # accounts/models.py
 from django.db import models
 from django.contrib.auth.models import User
-
+from django.conf import settings
+import os
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    avatar = models.ImageField(default="avatar.svg", upload_to="avatars/")
+    avatar = models.ImageField(upload_to="avatars/", default="avatar.svg", blank=True, null=True)
     phone = models.CharField(
         max_length=13,
         null=True,
@@ -14,13 +15,19 @@ class Profile(models.Model):
     )
     bio = models.TextField(null=True, blank=True)
 
-    # Renamed for clarity and added verification code field
     is_phone_verified = models.BooleanField(default=False)
     phone_verification_code = models.CharField(max_length=6, blank=True, null=True)
 
     def __str__(self):
         return f"{self.user.username} Profile"
 
+    @property
+    def display_avatar_url(self):
+        if self.avatar:
+            # Check if the avatar file exists
+            if os.path.isfile(self.avatar.path):
+                return self.avatar.url
+        return os.path.join(settings.STATIC_URL, 'images/default_avatar.svg')
 
 # The Notification model remains the same
 class Notification(models.Model):

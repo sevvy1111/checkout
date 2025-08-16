@@ -2,6 +2,10 @@
 # Exit on first error
 set -e
 
+# Install Python dependencies from requirements.txt
+echo "Installing dependencies..."
+pip install -r requirements.txt
+
 # Run database migrations
 echo "Running migrations..."
 python manage.py migrate --noinput

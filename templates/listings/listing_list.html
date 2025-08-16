@@ -24,77 +24,77 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const filterForm = document.getElementById('filter-form');
-    const listingsContainer = document.getElementById('listings-container');
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterForm = document.getElementById('filter-form');
+        const listingsContainer = document.getElementById('listings-container');
 
-    // Function to fetch and update listings
-    function updateListings() {
-        const formData = new FormData(filterForm);
-        const params = new URLSearchParams(formData);
+        // Function to fetch and update listings
+        function updateListings() {
+            const formData = new FormData(filterForm);
+            const params = new URLSearchParams(formData);
 
-        fetch(`/api/filter-listings/?${params.toString()}`)
-            .then(response => response.json())
-            .then(data => {
-                listingsContainer.innerHTML = data.html;
-            })
-            .catch(error => console.error('Error fetching listings:', error));
-    }
-
-    // Update listings whenever a filter input changes
-    filterForm.addEventListener('change', function() {
-        updateListings();
-    });
-    // Also handle search input as the user types
-    filterForm.addEventListener('keyup', function() {
-        updateListings();
-    });
-
-    // We need to use event delegation for the save button since the listings are loaded dynamically
-    listingsContainer.addEventListener('click', function(event) {
-        if (event.target.closest('.save-button')) {
-            const button = event.target.closest('.save-button');
-            const listingId = button.dataset.listingId;
-            const url = `/listing/${listingId}/save/`;
-            const csrftoken = getCookie('csrftoken'); // Assumes getCookie function exists from base.html
-
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrftoken,
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                const icon = button.querySelector('i');
-                if (data.is_saved) {
-                    icon.classList.remove('far');
-                    icon.classList.add('fas', 'text-danger');
-                } else {
-                    icon.classList.remove('fas', 'text-danger');
-                    icon.classList.add('far');
-                }
-            })
-            .catch(error => console.error('Error:', error));
+            fetch(`/api/filter-listings/?${params.toString()}`)
+                .then(response => response.json())
+                .then(data => {
+                    listingsContainer.innerHTML = data.html;
+                })
+                .catch(error => console.error('Error fetching listings:', error));
         }
-    });
 
-    // Helper function to get CSRF token (ensure this is also in your base.html or here)
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
+        // Update listings whenever a filter input changes
+        filterForm.addEventListener('change', function() {
+            updateListings();
+        });
+        // Also handle search input as the user types
+        filterForm.addEventListener('keyup', function() {
+            updateListings();
+        });
+
+        // We need to use event delegation for the save button since the listings are loaded dynamically
+        listingsContainer.addEventListener('click', function(event) {
+            if (event.target.closest('.save-button')) {
+                const button = event.target.closest('.save-button');
+                const listingId = button.dataset.listingId;
+                const url = `/listing/${listingId}/save/`;
+                const csrftoken = getCookie('csrftoken'); // Assumes getCookie function exists from base.html
+
+                fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrftoken,
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        const icon = button.querySelector('i');
+                        if (data.is_saved) {
+                            icon.classList.remove('far');
+                            icon.classList.add('fas', 'text-danger');
+                        } else {
+                            icon.classList.remove('fas', 'text-danger');
+                            icon.classList.add('far');
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+        });
+
+        // Helper function to get CSRF token (ensure this is also in your base.html or here)
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
                 }
             }
+            return cookieValue;
         }
-        return cookieValue;
-    }
-});
+    });
 </script>
 {% endblock %}

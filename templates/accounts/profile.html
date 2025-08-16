@@ -1,112 +1,119 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
 {% load listings_tags %}
+{% load static %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-4 mb-4">
-        <div class="card">
-            <div class="card-body text-center">
-                <img src="{{ request.user.profile.avatar.url }}" class="rounded-circle mb-3" alt="User Avatar" style="width: 150px; height: 150px; object-fit: cover;">
-                <h4 class="card-title">{{ request.user.username }}</h4>
+<div class="container my-5 profile-container">
+    <div class="row gx-lg-5">
+        <div class="col-lg-4 mb-4 mb-lg-0">
+            <div class="profile-info-card">
+                <img src="{{ request.user.profile.display_avatar_url }}" class="profile-avatar mb-3" alt="User Avatar">
+                <h4 class="profile-name">{{ request.user.username }}</h4>
                 {% if request.user.profile.phone %}
-                    <p class="text-muted">
-                        {{ request.user.profile.phone }}
-                        {% if request.user.profile.is_phone_verified %}
-                            <i class="fas fa-check-circle text-success" title="Verified"></i>
-                        {% else %}
-                            <i class="fas fa-exclamation-circle text-warning" title="Not Verified"></i>
-                            <a href="{% url 'accounts:send_verification_code' %}" class="btn btn-sm btn-outline-primary ms-2">Verify Now</a>
-                        {% endif %}
-                    </p>
+                <p class="text-muted small">
+                    {{ request.user.profile.phone }}
+                    {% if request.user.profile.is_phone_verified %}
+                    <i class="fas fa-check-circle text-success" title="Verified"></i>
+                    {% else %}
+                    <i class="fas fa-exclamation-circle text-warning" title="Not Verified"></i>
+                    <a href="{% url 'accounts:send_verification_code' %}" class="btn btn-sm btn-outline-primary ms-2">Verify Now</a>
+                    {% endif %}
+                </p>
                 {% endif %}
-                <p class="text-muted">{{ request.user.profile.bio|default:"No bio yet."|linebreaksbr }}</p>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#profileEditModal">
+                <p class="profile-bio">{{ request.user.profile.bio|default:"No bio yet."|linebreaksbr }}</p>
+                <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#profileEditModal">
                     Edit Profile
                 </button>
             </div>
         </div>
-    </div>
 
-    <div class="col-md-8">
-        <h3>My Listings</h3>
-        <hr>
-        <div class="row">
-            {% for listing in user_listings %}
-                <div class="col-md-6 mb-4">
-                    <div class="card listing-card h-100">
+        <div class="col-lg-8">
+            <h3>My Listings</h3>
+            <hr>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-2 g-4">
+                {% for listing in user_listings %}
+                <div class="col">
+                    <div class="listing-card">
                         <a href="{{ listing.get_absolute_url }}">
-                            {% if listing.images.first %}
-                                <img src="{{ listing.images.first.image.url }}" class="card-img-top" alt="{{ listing.title }}">
-                            {% else %}
-                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                                    <span class="text-muted">No Image</span>
+                            <div class="listing-card-image-container">
+                                {% if listing.images.first %}
+                                <img src="{{ listing.images.first.image.url }}" class="listing-card-image" alt="{{ listing.title }}">
+                                {% else %}
+                                <div class="listing-card-placeholder">
+                                    <span>No Image</span>
                                 </div>
-                            {% endif %}
+                                {% endif %}
+                            </div>
                         </a>
-                        <div class="card-body">
-                            <h5 class="card-title fw-bold">₱{{ listing.price|philippine_currency }}</h5>
-                            <p class="card-text">{{ listing.title }}</p>
+                        <div class="listing-card-body">
+                            <div class="listing-card-header">
+                                <a href="{{ listing.get_absolute_url }}" class="text-decoration-none text-dark">
+                                    <h5 class="listing-card-title">{{ listing.title }}</h5>
+                                </a>
+                                <span class="listing-card-price">₱{{ listing.price|philippine_currency }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            {% empty %}
-                <p class="text-muted">You have no listings yet.</p>
-            {% endfor %}
+                {% empty %}
+                <div class="col-12">
+                    <p class="text-muted text-center">You have no listings yet.</p>
+                </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 </div>
 
 <div class="modal fade" id="profileEditModal" tabindex="-1" aria-labelledby="profileEditModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title" id="profileEditModalLabel">Edit Profile</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="profileEditModalLabel">Edit Profile</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <img src="{{ request.user.profile.display_avatar_url }}" id="avatar-preview" class="rounded-circle profile-edit-avatar" width="120" height="120" style="object-fit: cover;">
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_avatar" class="form-label">Change Avatar</label>
+                        <input type="file" name="avatar" id="id_avatar" class="form-control">
+                    </div>
+                    {{ p_form|crispy }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
         </div>
-        <div class="modal-body">
-            <div class="text-center mb-3">
-                <img src="{{ request.user.profile.avatar.url }}" id="avatar-preview" class="rounded-circle" width="120" height="120" style="object-fit: cover;">
-            </div>
-
-            <div class="mb-3">
-                <label for="id_avatar" class="form-label">Change Avatar</label>
-                <input type="file" name="avatar" id="id_avatar" class="form-control">
-            </div>
-
-            {{ p_form|crispy }}
-
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button type="submit" class="btn btn-primary">Save Changes</button>
-        </div>
-      </form>
     </div>
-  </div>
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Live preview for avatar upload
-    const avatarInput = document.getElementById('id_avatar');
-    const avatarPreview = document.getElementById('avatar-preview');
+    document.addEventListener('DOMContentLoaded', function() {
+        // Live preview for avatar upload
+        const avatarInput = document.getElementById('id_avatar');
+        const avatarPreview = document.getElementById('avatar-preview');
 
-    if (avatarInput) {
-        avatarInput.addEventListener('change', function(event) {
-            if (event.target.files && event.target.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    avatarPreview.src = e.target.result;
+        if (avatarInput) {
+            avatarInput.addEventListener('change', function(event) {
+                if (event.target.files && event.target.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        avatarPreview.src = e.target.result;
+                    }
+                    reader.readAsDataURL(event.target.files[0]);
                 }
-                reader.readAsDataURL(event.target.files[0]);
-            }
-        });
-    }
-});
+            });
+        }
+    });
 </script>
 {% endblock %}
