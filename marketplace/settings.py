@@ -8,7 +8,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-cym2oo+i$d*-9aj=eazma
 
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['your-render-app-name.onrender.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['checkoutph.onrender.com', 'localhost', '127.0.0.1']
 
 INSTALLED_APPS = [
     'daphne',
