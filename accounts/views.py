@@ -1,5 +1,5 @@
 # accounts/views.py
-# refactor: Remove duplicate view and handle forms more robustly
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
@@ -16,8 +16,8 @@ from .forms import RegistrationForm, ProfileForm, PhoneVerificationForm
 @login_required
 def profile_view(request):
     profile = request.user.profile
-    # fix: Handle both text and file data in one form submission
     if request.method == 'POST':
+        # Pass both request.POST and request.FILES to the form
         p_form = ProfileForm(request.POST, request.FILES, instance=profile)
         if p_form.is_valid():
             p_form.save()

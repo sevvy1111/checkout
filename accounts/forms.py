@@ -1,4 +1,5 @@
 # accounts/forms.py
+
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
@@ -19,10 +20,12 @@ class RegistrationForm(UserCreationForm):
         return email
 
 class ProfileForm(forms.ModelForm):
+    # Include the avatar field for file upload handling.
+    avatar = forms.ImageField(required=False)
+
     class Meta:
         model = Profile
-        # The avatar is now handled directly in the view, not the form.
-        fields = ['phone', 'bio']
+        fields = ['avatar', 'phone', 'bio']
         widgets = {
             'bio': forms.Textarea(attrs={'rows': 4}),
         }

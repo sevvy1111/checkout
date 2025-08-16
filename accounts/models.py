@@ -1,5 +1,5 @@
 # accounts/models.py
-# refactor: Improve model property to be a method on the Profile model for better encapsulation
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
@@ -7,7 +7,8 @@ from cloudinary.models import CloudinaryField
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    avatar = CloudinaryField('avatar', blank=True, null=True)
+    # The 'avatar' field is now optional and uses a default image.
+    avatar = CloudinaryField('avatar', blank=True, null=True, default='static/images/default_avatar.svg')
     phone = models.CharField(
         max_length=13,
         null=True,
@@ -24,7 +25,7 @@ class Profile(models.Model):
 
     @property
     def display_avatar_url(self):
-        if self.avatar:
+        if self.avatar and self.avatar.url:
             return self.avatar.url
         return settings.STATIC_URL + 'images/default_avatar.svg'
 
