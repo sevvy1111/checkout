@@ -28,19 +28,14 @@
                                 <div class="d-flex justify-content-between align-items-center mt-2">
                                     <div class="d-flex align-items-center">
                                         <p class="cart-item-price mb-0 me-3">₱{{ item.listing.price|philippine_currency }}</p>
-                                        <div class="quantity-control d-flex align-items-center">
-                                            <form action="{% url 'listings:update_cart_item' item.pk %}" method="post" class="d-inline-flex align-items-center">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="action" value="decrease">
-                                                <button type="submit" class="btn btn-sm btn-outline-secondary">-</button>
-                                            </form>
-                                            <span class="mx-2 fw-bold">{{ item.quantity }}</span>
-                                            <form action="{% url 'listings:update_cart_item' item.pk %}" method="post" class="d-inline-flex align-items-center">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="action" value="increase">
-                                                <button type="submit" class="btn btn-sm btn-outline-secondary">+</button>
-                                            </form>
-                                        </div>
+                                        <form action="{% url 'listings:update_cart_item' item.pk %}" method="post" class="d-flex align-items-center">
+                                            {% csrf_token %}
+                                            <div class="input-group input-group-sm quantity-input-group">
+                                                <button class="btn btn-outline-secondary" type="submit" name="quantity" value="{{ item.quantity|add:-1 }}">-</button>
+                                                <input type="text" class="form-control text-center" value="{{ item.quantity }}" name="quantity" readonly style="width: 50px;">
+                                                <button class="btn btn-outline-secondary" type="submit" name="quantity" value="{{ item.quantity|add:1 }}">+</button>
+                                            </div>
+                                        </form>
                                     </div>
                                     <form action="{% url 'listings:remove_from_cart' item.pk %}" method="post">
                                         {% csrf_token %}
