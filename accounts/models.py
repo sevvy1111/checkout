@@ -24,10 +24,8 @@ class Profile(models.Model):
     @property
     def display_avatar_url(self):
         if self.avatar:
-            # Check if the avatar file exists
-            if os.path.isfile(self.avatar.path):
-                return self.avatar.url
-        return os.path.join(settings.STATIC_URL, 'images/default_avatar.svg')
+            return self.avatar.url
+        return settings.STATIC_URL + 'images/default_avatar.svg'
 
 # The Notification model remains the same
 class Notification(models.Model):

@@ -29,5 +29,6 @@ urlpatterns = [
     path('msgs/', include(('messaging.urls', 'messaging'), namespace='messaging')),
 ]
 
-# This is the production-ready way to handle media files.
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# The `static()` function is for local development only.
+# It is explicitly removed in production settings where DEBUG=False.
+# Media files are now handled by Cloudinary.
