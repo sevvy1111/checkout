@@ -117,6 +117,7 @@ class Checkout(models.Model):
     shipping_address = models.CharField(max_length=255)
     shipping_city = models.CharField(max_length=100)
     shipping_postal_code = models.CharField(max_length=20)
+    gift_note = models.TextField(blank=True, null=True)
 
     # New fields for payment integration
     payment_id = models.CharField(max_length=150, blank=True, null=True)

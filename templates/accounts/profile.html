@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
+{% load listings_tags %}
 
 {% block content %}
 <div class="row">
@@ -44,7 +45,7 @@
                             {% endif %}
                         </a>
                         <div class="card-body">
-                            <h5 class="card-title fw-bold">₱{{ listing.price|floatformat:2 }}</h5>
+                            <h5 class="card-title fw-bold">₱{{ listing.price|philippine_currency }}</h5>
                             <p class="card-text">{{ listing.title }}</p>
                         </div>
                     </div>

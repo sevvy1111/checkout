@@ -112,6 +112,11 @@ class ListingFilter(django_filters.FilterSet):
         model = Listing
         fields = ["q", "category", "city"]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Exclude 'sold' listings from the main queryset by default
+        self.queryset = self.queryset.filter(status='available')
+
     def search_filter(self, queryset, name, value):
         if not value:
             return queryset

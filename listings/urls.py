@@ -9,6 +9,7 @@ urlpatterns = [
     path('listing/create/', views.ListingCreateView.as_view(), name='listing_create'),
     path('listing/<int:pk>/', views.ListingDetailView.as_view(), name='listing_detail'),
     path('listing/<int:pk>/update/', views.ListingUpdateView.as_view(), name='listing_update'),
+    path('listing/<int:pk>/delete/', views.ListingDeleteView.as_view(), name='listing_delete'),
     path('listing/<int:pk>/save/', views.toggle_save_listing, name='listing_save_toggle'),
     path('api/filter-listings/', views.filter_listings, name='filter_listings'),
 

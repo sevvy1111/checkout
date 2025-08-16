@@ -1,3 +1,5 @@
+{% load listings_tags %}
+
 {% for listing in filter.qs %}
     <div class="col">
         <div class="card listing-card h-100">
@@ -22,9 +24,26 @@
                 {% endif %}
             </div>
             <div class="card-body">
-                <h5 class="card-title fw-bold">₱{{ listing.price|floatformat:2 }}</h5>
-                <p class="card-text">{{ listing.title }}</p>
-                <p class="card-text text-muted small">{{ listing.city }}</p>
+                <p class="card-text text-muted small mb-1">{{ listing.city }}</p>
+                <a href="{{ listing.get_absolute_url }}" class="text-decoration-none text-dark">
+                    <h6 class="card-title fw-bold mb-2">{{ listing.title }}</h6>
+                </a>
+                <h5 class="fw-bold text-primary mb-2">₱{{ listing.price|philippine_currency }}</h5>
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <a href="{% url 'accounts:public_profile' username=listing.seller.username %}" class="d-flex align-items-center text-decoration-none text-muted small">
+                        <img src="{{ listing.seller.profile.avatar.url }}" class="rounded-circle me-2" width="24" height="24">
+                        <span>{{ listing.seller.username }}</span>
+                    </a>
+                    {% if listing.average_rating %}
+                    <div class="text-warning">
+                        {% for i in "12345"|make_list %}
+                            <i class="{% if forloop.counter <= listing.average_rating %}fas{% else %}far{% endif %} fa-star small"></i>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <span class="text-muted small">No ratings</span>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>

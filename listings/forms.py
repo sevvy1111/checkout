@@ -1,6 +1,5 @@
 # listings/forms.py
 from django import forms
-from django.forms import inlineformset_factory
 from .models import Listing, ListingImage, Review, Checkout
 
 # Import the same comprehensive lists
@@ -26,15 +25,6 @@ class ListingForm(forms.ModelForm):
         }
 
 
-ListingImageFormset = inlineformset_factory(
-    Listing,
-    ListingImage,
-    fields=['image'],
-    extra=6,
-    can_delete=True
-)
-
-
 class ReviewForm(forms.ModelForm):
     class Meta:
         model = Review
@@ -55,9 +45,10 @@ class CheckoutForm(forms.ModelForm):
 
     class Meta:
         model = Checkout
-        fields = ['full_name', 'shipping_address', 'shipping_city', 'shipping_postal_code']
+        fields = ['full_name', 'shipping_address', 'shipping_city', 'shipping_postal_code', 'gift_note']
         widgets = {
             'shipping_address': forms.Textarea(attrs={'rows': 3}),
+            'gift_note': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Optional: Add a personal gift note'}),
         }
 
 
