@@ -4,67 +4,65 @@
 {% load static %}
 
 {% block content %}
-<div class="container my-5 profile-container">
-    <div class="row gx-lg-5">
-        <div class="col-lg-4 mb-4 mb-lg-0">
-            <div class="profile-info-card">
-                {% if request.user.profile.avatar and request.user.profile.avatar.url %}
-                <img src="{{ request.user.profile.avatar.url }}" class="profile-avatar mb-3" alt="User Avatar">
-                {% else %}
-                <img src="{% static 'images/default_avatar.svg' %}" class="profile-avatar mb-3" alt="Default Avatar">
-                {% endif %}
-                <h4 class="profile-name">{{ request.user.username }}</h4>
-                {% if request.user.profile.phone %}
-                <p class="text-muted small">
-                    {{ request.user.profile.phone }}
-                    {% if request.user.profile.is_phone_verified %}
-                    <i class="fas fa-check-circle text-success" title="Verified"></i>
-                    {% else %}
-                    <i class="fas fa-exclamation-circle text-warning" title="Not Verified"></i>
-                    <a href="{% url 'accounts:send_verification_code' %}" class="btn btn-sm btn-outline-primary ms-2">Verify Now</a>
+<div class="container my-5">
+    <div class="profile-container">
+        <div class="row gx-lg-5">
+            <div class="col-lg-4 mb-4 mb-lg-0">
+                <div class="profile-info-card">
+                    <img src="{{ request.user.profile.display_avatar_url }}" class="profile-avatar" alt="User Avatar">
+                    <h2 class="profile-name">{{ request.user.username }}</h2>
+                    {% if request.user.profile.phone %}
+                    <p class="text-muted">
+                        {{ request.user.profile.phone }}
+                        {% if request.user.profile.is_phone_verified %}
+                        <i class="fas fa-check-circle text-success" title="Verified"></i>
+                        {% else %}
+                        <i class="fas fa-exclamation-circle text-warning" title="Not Verified"></i>
+                        <a href="{% url 'accounts:send_verification_code' %}" class="btn btn-sm btn-outline-primary ms-2">Verify Now</a>
+                        {% endif %}
+                    </p>
                     {% endif %}
-                </p>
-                {% endif %}
-                <p class="profile-bio">{{ request.user.profile.bio|default:"No bio yet."|linebreaksbr }}</p>
-                <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#profileEditModal">
-                    Edit Profile
-                </button>
+                    <p class="profile-bio">{{ request.user.profile.bio|default:"No bio yet."|linebreaksbr }}</p>
+                    <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#profileEditModal">
+                        Edit Profile
+                    </button>
+                </div>
             </div>
-        </div>
 
-        <div class="col-lg-8">
-            <h3>My Listings</h3>
-            <hr>
-            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-2 g-4">
-                {% for listing in user_listings %}
-                <div class="col">
-                    <div class="listing-card">
-                        <a href="{{ listing.get_absolute_url }}">
-                            <div class="listing-card-image-container">
-                                {% if listing.images.first and listing.images.first.image.url %}
-                                <img src="{{ listing.images.first.image.url }}" class="listing-card-image" alt="{{ listing.title }}">
-                                {% else %}
-                                <div class="listing-card-placeholder">
-                                    <span>No Image</span>
+            <div class="col-lg-8">
+                <h3>My Listings</h3>
+                <hr>
+                <div class="row row-cols-1 row-cols-md-2 g-4">
+                    {% for listing in user_listings %}
+                    <div class="col">
+                        <div class="card listing-card">
+                            <a href="{{ listing.get_absolute_url }}">
+                                <div class="listing-card-image-container">
+                                    {% if listing.images.first %}
+                                    <img src="{{ listing.images.first.image.url }}" class="listing-card-image" alt="{{ listing.title }}">
+                                    {% else %}
+                                    <div class="listing-card-image listing-card-placeholder">
+                                        <span>No Image</span>
+                                    </div>
+                                    {% endif %}
                                 </div>
-                                {% endif %}
-                            </div>
-                        </a>
-                        <div class="listing-card-body">
-                            <div class="listing-card-header">
-                                <a href="{{ listing.get_absolute_url }}" class="text-decoration-none text-dark">
-                                    <h5 class="listing-card-title">{{ listing.title }}</h5>
-                                </a>
-                                <span class="listing-card-price">₱{{ listing.price|philippine_currency }}</span>
+                            </a>
+                            <div class="listing-card-body">
+                                <div class="listing-card-header">
+                                    <a href="{{ listing.get_absolute_url }}" class="text-decoration-none text-dark">
+                                        <h5 class="listing-card-title">{{ listing.title }}</h5>
+                                    </a>
+                                    <span class="listing-card-price">₱{{ listing.price|philippine_currency }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    {% empty %}
+                    <div class="col-12">
+                        <p class="text-muted text-center">You have no listings yet.</p>
+                    </div>
+                    {% endfor %}
                 </div>
-                {% empty %}
-                <div class="col-12">
-                    <p class="text-muted text-center">You have no listings yet.</p>
-                </div>
-                {% endfor %}
             </div>
         </div>
     </div>
@@ -81,11 +79,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="text-center mb-3">
-                         {% if request.user.profile.avatar and request.user.profile.avatar.url %}
-                        <img src="{{ request.user.profile.avatar.url }}" id="avatar-preview" class="rounded-circle profile-edit-avatar" width="120" height="120" style="object-fit: cover;">
-                        {% else %}
-                        <img src="{% static 'images/default_avatar.svg' %}" id="avatar-preview" class="rounded-circle profile-edit-avatar" width="120" height="120" style="object-fit: cover;">
-                        {% endif %}
+                        <img src="{{ request.user.profile.display_avatar_url }}" id="avatar-preview" class="rounded-circle" width="120" height="120" style="object-fit: cover;">
                     </div>
                     <div class="mb-3">
                         <label for="id_avatar" class="form-label">Change Avatar</label>
@@ -101,13 +95,11 @@
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Live preview for avatar upload
         const avatarInput = document.getElementById('id_avatar');
         const avatarPreview = document.getElementById('avatar-preview');
 

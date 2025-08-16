@@ -6,7 +6,7 @@
 <div class="row">
     <aside class="col-lg-3">
         <div class="filter-sidebar">
-            <h4 class="mb-3">Filters</h4>
+            <h4 class="mb-4">Filters</h4>
             <form id="filter-form">
                 {{ filter.form|crispy }}
             </form>
@@ -28,7 +28,6 @@
         const filterForm = document.getElementById('filter-form');
         const listingsContainer = document.getElementById('listings-container');
 
-        // Function to fetch and update listings
         function updateListings() {
             const formData = new FormData(filterForm);
             const params = new URLSearchParams(formData);
@@ -41,46 +40,38 @@
                 .catch(error => console.error('Error fetching listings:', error));
         }
 
-        // Update listings whenever a filter input changes
-        filterForm.addEventListener('change', function() {
-            updateListings();
-        });
-        // Also handle search input as the user types
-        filterForm.addEventListener('keyup', function() {
-            updateListings();
-        });
+        filterForm.addEventListener('change', updateListings);
+        filterForm.addEventListener('keyup', updateListings);
 
-        // We need to use event delegation for the save button since the listings are loaded dynamically
         listingsContainer.addEventListener('click', function(event) {
-            if (event.target.closest('.save-button')) {
-                const button = event.target.closest('.save-button');
-                const listingId = button.dataset.listingId;
+            const saveButton = event.target.closest('.save-button');
+            if (saveButton) {
+                const listingId = saveButton.dataset.listingId;
                 const url = `/listing/${listingId}/save/`;
-                const csrftoken = getCookie('csrftoken'); // Assumes getCookie function exists from base.html
+                const csrftoken = getCookie('csrftoken');
 
                 fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': csrftoken,
-                            'Content-Type': 'application/json'
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        const icon = button.querySelector('i');
-                        if (data.is_saved) {
-                            icon.classList.remove('far');
-                            icon.classList.add('fas', 'text-danger');
-                        } else {
-                            icon.classList.remove('fas', 'text-danger');
-                            icon.classList.add('far');
-                        }
-                    })
-                    .catch(error => console.error('Error:', error));
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const icon = saveButton.querySelector('i');
+                    if (data.is_saved) {
+                        icon.classList.remove('far');
+                        icon.classList.add('fas', 'text-danger');
+                    } else {
+                        icon.classList.remove('fas', 'text-danger');
+                        icon.classList.add('far');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
             }
         });
 
-        // Helper function to get CSRF token (ensure this is also in your base.html or here)
         function getCookie(name) {
             let cookieValue = null;
             if (document.cookie && document.cookie !== '') {
