@@ -1,13 +1,18 @@
-# checkout/listings/models.py
-
+# listings/models.py
+# refactor: Encapsulate average_rating logic within a custom manager
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
-from django.db.models import Avg
+from django.db.models import Avg, F, Sum
 from cloudinary.models import CloudinaryField
 
 User = get_user_model()
+
+# refactor: Create a custom manager to handle common queries like annotating average rating
+class ListingQuerySet(models.QuerySet):
+    def with_avg_rating(self):
+        return self.annotate(average_rating=Avg('reviews__rating'))
 
 class Listing(models.Model):
     STATUS_CHOICES = (
@@ -28,6 +33,8 @@ class Listing(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="available")
     featured = models.BooleanField(default=False)
     stock = models.PositiveIntegerField(default=1)
+
+    objects = ListingQuerySet.as_manager()
 
     class Meta:
         ordering = ["-featured", "-created"]
@@ -122,9 +129,5 @@ class Checkout(models.Model):
     def __str__(self):
         return f"Checkout of {self.quantity} x {self.listing.title} by {self.user.username}"
 
-
-@property
-def average_rating(self):
-    return Review.objects.filter(listing__seller=self).aggregate(Avg('rating'))['rating__avg']
-
-User.add_to_class("average_rating", average_rating)
+# chore: Removed the `User.add_to_class` and the `average_rating` property.
+# This logic is now a more appropriately placed method on the Profile model.

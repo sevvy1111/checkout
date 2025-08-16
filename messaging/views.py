@@ -1,4 +1,5 @@
 # messaging/views.py
+# refactor: Centralize and correct timestamp formatting
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -6,10 +7,10 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db.models import Prefetch
 from django.contrib.auth.models import User
-from django.db import models  # New import for models
+from django.db import models
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-import platform
+from django.utils import timezone  # New import
 
 from .models import Conversation, Message
 from .forms import MessageForm
@@ -49,8 +50,8 @@ class ConversationDetailView(LoginRequiredMixin, DetailView):
         context['recipient'] = recipient
         context['form'] = MessageForm()
         # Mark messages as read
-        messages = conversation.messages.filter(is_read=False, receiver=self.request.user)
-        messages.update(is_read=True)
+        messages_to_read = conversation.messages.filter(is_read=False, receiver=self.request.user)
+        messages_to_read.update(is_read=True)
         return context
 
     def post(self, request, *args, **kwargs):
@@ -68,15 +69,17 @@ class ConversationDetailView(LoginRequiredMixin, DetailView):
 
             # Broadcast the new message via WebSocket
             channel_layer = get_channel_layer()
-            timestamp_format = '%b. %d, %Y, %#I:%M %p' if platform.system() == 'Windows' else '%b. %d, %Y, %-I:%M %p'
+            # refactor: Use timezone.localtime for a more robust, locale-aware approach
+            timestamp_format = '%b. %d, %Y, %I:%M %p'
+            local_time = timezone.localtime(message.timestamp)
 
             message_data = {
                 "type": "chat_message",
                 "message": message.text,
                 "sender": message.sender.username,
-                "timestamp": message.timestamp.strftime(timestamp_format),
+                "timestamp": local_time.strftime(timestamp_format),
                 "image_url": message.image.url if message.image else None,
-                "temp_id": request.POST.get('temp_id')  # Pass the temp_id from the form data
+                "temp_id": request.POST.get('temp_id')
             }
 
             async_to_sync(channel_layer.group_send)(
@@ -85,7 +88,6 @@ class ConversationDetailView(LoginRequiredMixin, DetailView):
             )
             return JsonResponse({'status': 'ok'})
         else:
-            # If the form is invalid, return a JSON response with errors
             return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
 
 
@@ -118,15 +120,17 @@ def send_message(request, username):
 
             # Broadcast the new message via WebSocket
             channel_layer = get_channel_layer()
-            timestamp_format = '%b. %d, %Y, %#I:%M %p' if platform.system() == 'Windows' else '%b. %d, %Y, %-I:%M %p'
+            # refactor: Use timezone.localtime for a more robust, locale-aware approach
+            timestamp_format = '%b. %d, %Y, %I:%M %p'
+            local_time = timezone.localtime(message.timestamp)
 
             message_data = {
                 "type": "chat_message",
                 "message": message.text,
                 "sender": message.sender.username,
-                "timestamp": message.timestamp.strftime(timestamp_format),
+                "timestamp": local_time.strftime(timestamp_format),
                 "image_url": message.image.url if message.image else None,
-                "temp_id": request.POST.get('temp_id')  # Pass the temp_id from the form data
+                "temp_id": request.POST.get('temp_id')
             }
 
             async_to_sync(channel_layer.group_send)(
@@ -135,7 +139,6 @@ def send_message(request, username):
             )
             return JsonResponse({'status': 'ok', 'conversation_pk': conversation.pk})
         else:
-            # If the form is invalid, return a JSON response with errors
             return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
     else:
         form = MessageForm()

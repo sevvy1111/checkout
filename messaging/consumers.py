@@ -1,8 +1,7 @@
 # messaging/consumers.py
+# chore: Clean up imports and remove unused platform import
 import json
-import platform  # Import the platform module
 from channels.generic.websocket import AsyncWebsocketConsumer
-from django.contrib.auth.models import User
 from .models import Message, Conversation
 
 

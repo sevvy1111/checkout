@@ -1,10 +1,10 @@
 # accounts/views.py
+# refactor: Remove duplicate view and handle forms more robustly
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db.models import Count
 import random
 
@@ -16,15 +16,9 @@ from .forms import RegistrationForm, ProfileForm, PhoneVerificationForm
 @login_required
 def profile_view(request):
     profile = request.user.profile
+    # fix: Handle both text and file data in one form submission
     if request.method == 'POST':
-        # Handle the text-based form fields
-        p_form = ProfileForm(request.POST, instance=profile)
-
-        # Handle the avatar upload separately
-        if 'avatar' in request.FILES:
-            profile.avatar = request.FILES['avatar']
-            profile.save()
-
+        p_form = ProfileForm(request.POST, request.FILES, instance=profile)
         if p_form.is_valid():
             p_form.save()
             messages.success(request, 'Your profile has been updated successfully!')
@@ -136,6 +130,7 @@ def seller_orders_view(request):
     return render(request, 'accounts/seller_orders.html', {'seller_checkouts': seller_checkouts, 'forms': forms})
 
 
+# fix: Removed the duplicate `update_order_status_view` function.
 @login_required
 def update_order_status_view(request, pk):
     if request.method == 'POST':
@@ -150,21 +145,6 @@ def update_order_status_view(request, pk):
     return redirect('accounts:seller_orders')
 
 
-@login_required
-def update_order_status_view(request, pk):
-    if request.method == 'POST':
-        checkout_item = get_object_or_404(Checkout, pk=pk, listing__seller=request.user)
-        form = OrderStatusForm(request.POST, instance=checkout_item)
-        if form.is_valid():
-            form.save()
-            messages.success(request,
-                             f"Order for '{checkout_item.listing.title}' has been updated to '{checkout_item.status}'.")
-        else:
-            messages.error(request, "Invalid form submission.")
-    return redirect('accounts:seller_orders')
-
-
-# New view for the buyer's receipt
 @login_required
 def receipt_view(request, pk):
     receipt = get_object_or_404(Checkout, pk=pk, user=request.user)

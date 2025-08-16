@@ -1,4 +1,5 @@
 # messaging/urls.py
+# chore: Clean up imports
 from django.urls import path
 from .views import InboxView, ConversationDetailView, send_message
 

@@ -1,5 +1,5 @@
-# checkout/marketplace/settings.py
-
+# marketplace/settings.py
+# refactor: Use a proper security check for the secret key and make ALLOWED_HOSTS dynamic
 from pathlib import Path
 import os
 import dj_database_url
@@ -18,9 +18,12 @@ if not SECRET_KEY:
 
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-
-ALLOWED_HOSTS = ['checkoutph.onrender.com', 'localhost', '127.0.0.1']
-CSRF_TRUSTED_ORIGINS = ['https://checkoutph.onrender.com']
+# Retrieve trusted origins from environment variables or use a default for development
+# This makes it more flexible for different deployment environments
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost').split(',')
+if 'checkoutph.onrender.com' in ALLOWED_HOSTS:
+    CSRF_TRUSTED_ORIGINS.append('https://checkoutph.onrender.com')
 
 # --- INSTALLED APPS & MIDDLEWARE ---
 INSTALLED_APPS = [

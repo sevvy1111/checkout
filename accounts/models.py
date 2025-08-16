@@ -1,4 +1,5 @@
 # accounts/models.py
+# refactor: Improve model property to be a method on the Profile model for better encapsulation
 from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
@@ -26,6 +27,12 @@ class Profile(models.Model):
         if self.avatar:
             return self.avatar.url
         return settings.STATIC_URL + 'images/default_avatar.svg'
+
+    # New property to get the seller's average rating directly from the profile
+    @property
+    def seller_average_rating(self):
+        return self.user.listings.aggregate(avg_rating=models.Avg('reviews__rating'))['avg_rating']
+
 
 # The Notification model remains the same
 class Notification(models.Model):

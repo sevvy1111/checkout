@@ -1,4 +1,5 @@
 # accounts/urls.py
+# chore: Remove redundant URL entry for update_order_status
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views

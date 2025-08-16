@@ -1,4 +1,5 @@
 # listings/views.py
+# refactor: Use the custom manager and atomic transactions for better performance and data integrity
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
@@ -9,9 +10,10 @@ from django.http import JsonResponse, HttpResponseForbidden
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
 from django.db.models import Sum, F, Avg
+from django.db.models.functions import Coalesce
 
 from .models import Listing, ListingImage, SavedItem, Review, Cart, CartItem, Checkout
-from .forms import ListingForm, ReviewForm, CheckoutForm, OrderStatusForm
+from .forms import ListingForm, ReviewForm, CheckoutForm
 from .filters import ListingFilter
 
 
@@ -23,10 +25,9 @@ class ListingListView(ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        # Corrected: Removed 'category' from select_related as it is no longer a ForeignKey
-        self.filterset = ListingFilter(self.request.GET, queryset=queryset.select_related('seller').annotate(
-            average_rating=Avg('reviews__rating')
-        ))
+        # refactor: Use the custom manager method to annotate average rating
+        queryset = queryset.select_related('seller').with_avg_rating()
+        self.filterset = ListingFilter(self.request.GET, queryset=queryset)
         return self.filterset.qs
 
     def get_context_data(self, **kwargs):
@@ -46,9 +47,13 @@ class ListingDetailView(DetailView):
     template_name = 'listings/listing_detail.html'
     context_object_name = 'listing'
 
+    def get_queryset(self):
+        # chore: Prefetch related images and reviews for efficiency
+        return super().get_queryset().prefetch_related('images', 'reviews__author__profile')
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['reviews'] = self.object.reviews.all().select_related('author__profile')
+        context['reviews'] = self.object.reviews.all()
         context['review_form'] = ReviewForm()
         if self.request.user.is_authenticated:
             context['has_reviewed'] = Review.objects.filter(listing=self.object, author=self.request.user).exists()
@@ -124,9 +129,6 @@ class ListingDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     template_name = 'listings/listing_confirm_delete.html'
     success_url = reverse_lazy('accounts:dashboard')
 
-    def test_func(self):
-        return self.get_object().seller == self.request.user
-
     def form_valid(self, form):
         messages.success(self.request, f"The listing '{self.object.title}' has been successfully deleted.")
         return super().form_valid(form)
@@ -147,10 +149,9 @@ def toggle_save_listing(request, pk):
 
 
 def filter_listings(request):
-    # Corrected: Removed 'category' from select_related
-    filter = ListingFilter(request.GET, queryset=Listing.objects.all().select_related('seller').annotate(
-        average_rating=Avg('reviews__rating')
-    ))
+    # refactor: Use the custom manager method
+    filter_queryset = Listing.objects.all().select_related('seller').with_avg_rating()
+    filter = ListingFilter(request.GET, queryset=filter_queryset)
     saved_listing_ids = []
     if request.user.is_authenticated:
         saved_listing_ids = SavedItem.objects.filter(user=request.user).values_list('listing__id', flat=True)
@@ -170,10 +171,13 @@ def mark_listing_as_sold(request, pk):
         return HttpResponseForbidden()
 
     if request.method == 'POST':
-        listing.status = 'sold'
-        listing.stock = 0  # Set stock to 0 when marked as sold
-        listing.save()
-        return redirect('accounts:dashboard')
+        # refactor: Use atomic transaction to ensure data integrity
+        with transaction.atomic():
+            listing.status = 'sold'
+            listing.stock = 0  # Set stock to 0 when marked as sold
+            listing.save()
+            messages.success(request, f"Listing '{listing.title}' has been marked as sold.")
+            return redirect('accounts:dashboard')
 
     return redirect('accounts:dashboard')
 
@@ -187,25 +191,36 @@ def add_to_cart(request, pk):
         messages.error(request, f"Sorry, '{listing.title}' is currently out of stock.")
         return redirect('listings:listing_detail', pk=listing.pk)
 
-    cart_item, item_created = CartItem.objects.get_or_create(cart=cart, listing=listing)
+    try:
+        # refactor: Use atomic transaction to prevent race conditions
+        with transaction.atomic():
+            cart_item, item_created = CartItem.objects.select_for_update().get_or_create(cart=cart, listing=listing)
 
-    if not item_created:
-        if cart_item.quantity < listing.stock:
-            cart_item.quantity += 1
-            cart_item.save()
-            messages.success(request, f"Added another '{listing.title}' to your cart.")
-        else:
-            messages.error(request, f"You have reached the maximum stock available for '{listing.title}'.")
-    else:
-        messages.success(request, f"Added '{listing.title}' to your cart.")
+            if not item_created:
+                # bug: Fix a potential race condition by using F expressions
+                if cart_item.quantity < listing.stock:
+                    cart_item.quantity = F('quantity') + 1
+                    cart_item.save()
+                    messages.success(request, f"Added another '{listing.title}' to your cart.")
+                else:
+                    messages.error(request, f"You have reached the maximum stock available for '{listing.title}'.")
+            else:
+                messages.success(request, f"Added '{listing.title}' to your cart.")
+    except Exception as e:
+        messages.error(request, f"An error occurred: {e}")
 
     return redirect('listings:listing_detail', pk=listing.pk)
 
 
 @login_required
 def view_cart(request):
-    cart, created = Cart.objects.get_or_create(user=request.user)
-    return render(request, 'listings/cart_detail.html', {'cart': cart})
+    cart = get_object_or_404(Cart, user=request.user)
+    # chore: Prefetch related items for better performance
+    cart_items = cart.items.all().select_related('listing')
+    total_price = cart_items.aggregate(
+        total_price=Sum(F('quantity') * F('listing__price'))
+    )['total_price']
+    return render(request, 'listings/cart_detail.html', {'cart_items': cart_items, 'total_price': total_price})
 
 
 @login_required
@@ -233,31 +248,40 @@ def checkout(request):
     if request.method == 'POST':
         checkout_form = CheckoutForm(request.POST)
         if checkout_form.is_valid():
+            # bug: Fix to create one checkout per item, not just one checkout instance for all items
             with transaction.atomic():
+                # refactor: Use select_for_update to prevent race conditions
+                cart_items = cart.items.all().select_for_update().select_related('listing')
+
+                # Check stock availability for all items before proceeding
+                for item in cart_items:
+                    if item.quantity > item.listing.stock:
+                        messages.error(request,
+                                       f"Checkout failed: Insufficient stock for '{item.listing.title}'. Only {item.listing.stock} available.")
+                        return redirect('listings:view_cart')
+
+                # Proceed with checkout if all items are in stock
                 for item in cart_items:
                     listing = item.listing
-                    if listing.stock >= item.quantity:
-                        listing.stock -= item.quantity
-                        if listing.stock == 0:
-                            listing.status = 'sold'
-                        listing.save()
 
-                        # Create a single Checkout object with all the form data
-                        checkout_instance = checkout_form.save(commit=False)
-                        checkout_instance.user = request.user
-                        checkout_instance.listing = listing
-                        checkout_instance.quantity = item.quantity
-                        checkout_instance.save()
+                    # Create a Checkout object for each item
+                    checkout_instance = checkout_form.save(commit=False)
+                    checkout_instance.user = request.user
+                    checkout_instance.listing = listing
+                    checkout_instance.quantity = item.quantity
+                    checkout_instance.save()
 
-                        item.delete()
-                    else:
-                        messages.error(request, f"Checkout failed: Insufficient stock for '{listing.title}'.")
-                        return redirect('listings:view_cart')
+                    # Atomically update stock using F() expression
+                    listing.stock = F('stock') - item.quantity
+                    if listing.stock == 0:
+                        listing.status = 'sold'
+                    listing.save()
+
+                    item.delete()
 
                 messages.success(request, "Your order has been placed successfully!")
                 return redirect('accounts:dashboard')
         else:
-            # If the form is invalid, re-render the checkout page with errors
             return render(request, 'listings/checkout.html',
                           {'cart_items': cart_items, 'form': checkout_form, 'total_price': total_price})
 
@@ -274,16 +298,22 @@ def update_cart_item(request, pk):
         cart_item = get_object_or_404(CartItem, pk=pk, cart__user=request.user)
         try:
             new_quantity = int(request.POST.get('quantity'))
-            if new_quantity <= 0:
-                cart_item.delete()
-                messages.info(request, f"'{cart_item.listing.title}' was removed from your cart.")
-            elif new_quantity <= cart_item.listing.stock:
-                cart_item.quantity = new_quantity
-                cart_item.save()
-                messages.success(request, f"Quantity for '{cart_item.listing.title}' updated.")
-            else:
-                messages.error(request,
-                               f"Cannot update quantity. Only {cart_item.listing.stock} stocks are available for '{cart_item.listing.title}'.")
+
+            # bug: Prevent race conditions with atomic transaction and F() expression
+            with transaction.atomic():
+                item = CartItem.objects.select_for_update().get(pk=pk)
+                listing_stock = item.listing.stock
+
+                if new_quantity <= 0:
+                    item.delete()
+                    messages.info(request, f"'{item.listing.title}' was removed from your cart.")
+                elif new_quantity <= listing_stock:
+                    item.quantity = new_quantity
+                    item.save()
+                    messages.success(request, f"Quantity for '{item.listing.title}' updated.")
+                else:
+                    messages.error(request,
+                                   f"Cannot update quantity. Only {listing_stock} stocks are available for '{item.listing.title}'.")
         except (ValueError, TypeError):
             messages.error(request, "Invalid quantity.")
 
@@ -293,9 +323,7 @@ def update_cart_item(request, pk):
 @login_required
 def invoice_view(request, pk):
     checkout = get_object_or_404(Checkout, pk=pk, listing__seller=request.user)
-
     total_price = checkout.listing.price * checkout.quantity
-
     context = {
         'checkout': checkout,
         'total_price': total_price,
