@@ -5,6 +5,7 @@ import os
 import dj_database_url
 import dotenv
 from django.core.exceptions import ImproperlyConfigured
+import cloudinary # <-- Add this import
 
 dotenv.load_dotenv()
 
@@ -108,6 +109,7 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
+
 # Static files
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
@@ -122,27 +124,28 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Cloudinary settings for production
 if not DEBUG:
-    # Check for required environment variables
     CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME')
     CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY')
     CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET')
 
-    # --- TEMPORARY DEBUGGING ---
-    # Print the values to the console to verify them in Render logs.
-    print(f"CLOUDINARY_CLOUD_NAME: {CLOUDINARY_CLOUD_NAME}")
-    print(f"CLOUDINARY_API_KEY: {CLOUDINARY_API_KEY}")
-    print(f"CLOUDINARY_API_SECRET: {'*' * len(CLOUDINARY_API_SECRET) if CLOUDINARY_API_SECRET else 'Not Set'}")
-    # ---------------------------
-
     if not all([CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET]):
         raise ImproperlyConfigured("Cloudinary credentials are not fully set in environment variables.")
 
+    # Explicitly configure the core cloudinary library
+    cloudinary.config(
+        cloud_name=CLOUDINARY_CLOUD_NAME,
+        api_key=CLOUDINARY_API_KEY,
+        api_secret=CLOUDINARY_API_SECRET
+    )
+
+    # Configure the Django storage backend
     CLOUDINARY_STORAGE = {
         'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
         'API_KEY': CLOUDINARY_API_KEY,
         'API_SECRET': CLOUDINARY_API_SECRET
     }
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
