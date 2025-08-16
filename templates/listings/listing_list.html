@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
+{% load listings_tags %}
 
 {% block content %}
 <div class="row">
-    <aside class="col-lg-3">
+    <aside class="col-lg-2">
         <div class="filter-sidebar">
             <h4 class="mb-3">Filters</h4>
             <form id="filter-form">
@@ -12,13 +13,9 @@
         </div>
     </aside>
 
-    <main class="col-lg-9">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="mb-0">Today's Picks</h2>
-            <div>
-                </div>
-        </div>
-        <div id="listings-container" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    <main class="col-lg-10">
+        <h2 class="mb-3">Today's Picks</h2>
+        <div id="listings-container" class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-2">
             {% include 'listings/partials/listings_grid.html' %}
         </div>
     </main>
@@ -27,101 +24,68 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const filterForm = document.getElementById('filter-form');
-    const listingsContainer = document.getElementById('listings-container');
-    const searchInput = document.querySelector('input[name="title"]');
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterForm = document.getElementById('filter-form');
+        const listingsContainer = document.getElementById('listings-container');
 
-    function updateListings() {
-        const formData = new FormData(filterForm);
-        // Ensure search query from navbar is included
-        if (searchInput && searchInput.value) {
-            formData.append('title', searchInput.value);
-        }
-        const params = new URLSearchParams(formData);
+        function updateListings() {
+            const formData = new FormData(filterForm);
+            const params = new URLSearchParams(formData);
 
-        fetch(`/api/filter-listings/?${params.toString()}`)
-            .then(response => response.text()) // Expecting HTML response
-            .then(html => {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const newContent = doc.querySelector('#listings-container');
-                if (newContent) {
-                    listingsContainer.innerHTML = newContent.innerHTML;
-                } else {
-                    // Fallback for older API that returned JSON with an 'html' key
-                    const data = JSON.parse(html);
+            fetch(`/api/filter-listings/?${params.toString()}`)
+                .then(response => response.json())
+                .then(data => {
                     listingsContainer.innerHTML = data.html;
-                }
-            })
-            .catch(error => console.error('Error fetching listings:', error));
-    }
-
-
-    // Debounce function to limit the rate at which a function gets called.
-    function debounce(func, wait) {
-        let timeout;
-        return function(...args) {
-            const context = this;
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(context, args), wait);
-        };
-    }
-
-    const debouncedUpdate = debounce(updateListings, 300);
-
-    filterForm.addEventListener('change', debouncedUpdate);
-    filterForm.addEventListener('keyup', debouncedUpdate);
-    if(searchInput) {
-        searchInput.addEventListener('keyup', debouncedUpdate);
-    }
-
-
-    // Save button functionality
-    listingsContainer.addEventListener('click', function(event) {
-        const saveButton = event.target.closest('.save-button');
-        if (saveButton) {
-            event.preventDefault();
-            const listingId = saveButton.dataset.listingId;
-            const url = `/listing/${listingId}/save/`;
-            const csrftoken = getCookie('csrftoken');
-
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrftoken,
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                const icon = saveButton.querySelector('i');
-                if (data.is_saved) {
-                    icon.classList.remove('far');
-                    icon.classList.add('fas', 'text-danger');
-                } else {
-                    icon.classList.remove('fas', 'text-danger');
-                    icon.classList.add('far');
-                }
-            })
-            .catch(error => console.error('Error:', error));
+                })
+                .catch(error => console.error('Error fetching listings:', error));
         }
-    });
 
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
+        filterForm.addEventListener('change', updateListings);
+        filterForm.addEventListener('keyup', updateListings);
+
+        listingsContainer.addEventListener('click', function(event) {
+            const saveButton = event.target.closest('.save-button');
+            if (saveButton) {
+                const listingId = saveButton.dataset.listingId;
+                const url = `/listing/${listingId}/save/`;
+                const csrftoken = getCookie('csrftoken');
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const icon = saveButton.querySelector('i');
+                    if (data.is_saved) {
+                        icon.classList.remove('far');
+                        icon.classList.add('fas', 'text-danger');
+                    } else {
+                        icon.classList.remove('fas', 'text-danger');
+                        icon.classList.add('far');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
                 }
             }
+            return cookieValue;
         }
-        return cookieValue;
-    }
-});
+    });
 </script>
 {% endblock %}

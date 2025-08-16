@@ -1,64 +1,141 @@
 {% extends "base.html" %}
-{% load static %}
 {% load crispy_forms_tags %}
+{% load listings_tags %}
+{% load static %}
 
-{% block title %}{{ listing.title }} - CheckoutPH{% endblock %}
+{% block title %}{{ listing.title }}{% endblock %}
 
 {% block content %}
-<div class="listing-detail-container">
-    <div class="row">
-        <div class="col-lg-5">
-            <div class="listing-image-gallery">
-                {% if listing.images.exists %}
-                    {% for image in listing.images.all %}
-                        <img src="{{ image.image.url }}" alt="{{ listing.title }}" class="img-fluid">
+<div class="container my-5 listing-detail-container">
+    <div class="row gx-lg-5">
+        <div class="col-lg-7 mb-4 mb-lg-0">
+            <div id="listingCarousel" class="carousel slide listing-detail-carousel" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    {% for img in listing.images.all %}
+                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        {% if img.image and img.image.url %}
+                        <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ listing.title }}">
+                        {% else %}
+                        <div class="listing-detail-placeholder">
+                            <span>Image Not Available</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <div class="carousel-item active">
+                        <div class="listing-detail-placeholder">
+                            <span>No Image</span>
+                        </div>
+                    </div>
                     {% endfor %}
-                {% else %}
-                    <img src="{% static 'images/default_listing.png' %}" alt="Default image" class="img-fluid">
+                </div>
+                {% if listing.images.all|length > 1 %}
+                <button class="carousel-control-prev" type="button" data-bs-target="#listingCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#listingCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
                 {% endif %}
             </div>
         </div>
 
-        <div class="col-lg-4">
-            <h2>{{ listing.title }}</h2>
-            <h3 class="listing-card-price mb-3">₱{{ listing.price|floatformat:2 }}</h3>
-            <p class="text-muted">Condition: {{ listing.get_condition_display }}</p>
-
-            <div class="mt-4">
-                <h4>Description</h4>
-                <p>{{ listing.description|linebreaksbr }}</p>
-            </div>
-             <p class="text-muted small">Category: {{ listing.category }}</p>
-
-        </div>
-
-        <div class="col-lg-3">
-            <div class="listing-actions border p-3 rounded">
-                <h5 class="mb-3">Actions</h5>
-                 {% if user.is_authenticated %}
-                    {% if user != listing.seller %}
-                        <form action="{% url 'listings:add_to_cart' listing.id %}" method="post" class="d-grid gap-2">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-cart-plus me-2"></i> Add to Cart
-                            </button>
-                        </form>
-                         <a href="{% url 'messaging:send_message' listing_id=listing.id %}" class="btn btn-secondary mt-2"><i class="fas fa-envelope me-2"></i> Message Seller</a>
+        <div class="col-lg-5">
+            <div class="listing-detail-info-card">
+                <div class="listing-detail-info-header">
+                    <h1 class="listing-detail-title">{{ listing.title }}</h1>
+                    <span class="listing-detail-price">₱{{ listing.price|philippine_currency }}</span>
+                </div>
+                <p class="listing-detail-location">{{ listing.city }} • Posted {{ listing.created|timesince }} ago</p>
+                <hr>
+                <div class="listing-detail-seller-info">
+                    {% if listing.seller.profile.avatar and listing.seller.profile.avatar.url %}
+                    <img src="{{ listing.seller.profile.avatar.url }}" class="listing-detail-avatar" alt="{{ listing.seller.username }}'s avatar">
                     {% else %}
-                        <a href="{% url 'listings:listing_update' listing.pk %}" class="btn btn-secondary"><i class="fas fa-edit me-2"></i> Edit Listing</a>
-                        <a href="{% url 'listings:listing_delete' listing.pk %}" class="btn btn-danger mt-2"><i class="fas fa-trash me-2"></i> Delete Listing</a>
+                    <img src="{% static 'images/default_avatar.svg' %}" class="listing-detail-avatar" alt="Default avatar">
                     {% endif %}
-                {% else %}
-                    <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-primary"><i class="fas fa-sign-in-alt me-2"></i> Login to Purchase</a>
-                {% endif %}
+                    <div class="ms-3">
+                        <a href="{% url 'accounts:public_profile' username=listing.seller.username %}" class="listing-detail-seller-name">
+                            {{ listing.seller.username }}
+                        </a>
+                        {% if listing.seller.average_rating %}
+                        <div class="listing-detail-rating">
+                            <i class="fas fa-star"></i> {{ listing.seller.average_rating|floatformat:1 }}
+                        </div>
+                        {% else %}
+                        <span class="text-muted small">No reviews yet</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <hr>
+                <div class="listing-detail-action-buttons">
+                    {% if user.is_authenticated and user != listing.seller %}
+                    <a href="{% url 'messaging:send_message' username=listing.seller.username %}?listing_id={{ listing.id }}" class="btn btn-primary btn-lg w-100 mb-2">Message Seller</a>
+                    {% if listing.stock > 0 %}
+                    <p class="text-success fw-bold mb-2 text-center">In Stock: {{ listing.stock }}</p>
+                    <a href="{% url 'listings:add_to_cart' pk=listing.pk %}" class="btn btn-success btn-lg w-100">Add to Cart</a>
+                    {% else %}
+                    <p class="text-danger fw-bold mb-2 text-center">Out of Stock</p>
+                    <button class="btn btn-danger btn-lg w-100" disabled>Out of Stock</button>
+                    {% endif %}
+                    {% elif user == listing.seller %}
+                    <a href="{% url 'listings:listing_update' pk=listing.pk %}" class="btn btn-secondary btn-lg w-100 mb-2">Edit Listing</a>
+                    <a href="{% url 'listings:listing_delete' pk=listing.pk %}" class="btn btn-danger btn-lg w-100 mb-2">Delete Listing</a>
+                    {% if listing.status == 'available' %}
+                    <form action="{% url 'listings:mark_as_sold' pk=listing.pk %}" method="post" class="d-inline w-100">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success btn-lg w-100">Mark as Sold</button>
+                    </form>
+                    {% endif %}
+                    {% else %}
+                    <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-primary btn-lg w-100">Login to Interact</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3 class="mb-3">Description</h3>
+            <div class="bg-white p-4 rounded shadow-sm mb-5">
+                <p class="card-text">{{ listing.description|linebreaks }}</p>
             </div>
 
-            <div class="seller-info-card mt-4">
-                <img src="{{ listing.seller.profile.avatar.url }}" alt="{{ listing.seller.username }}" class="seller-avatar">
-                <h5 class="mb-1">{{ listing.seller.username }}</h5>
-                <p class="text-muted small">Member since {{ listing.seller.date_joined|date:"M Y" }}</p>
-                <a href="{% url 'accounts:profile_detail' listing.seller.username %}" class="btn btn-sm btn-outline-secondary">View Profile</a>
+            <h3 class="mb-3">Reviews</h3>
+            {% if user.is_authenticated and user != listing.seller and not has_reviewed %}
+            <div class="listing-detail-review-card mb-4">
+                <h5 class="card-title mb-3">Leave a Review</h5>
+                <form method="post">
+                    {% csrf_token %}
+                    {{ review_form|crispy }}
+                    <button type="submit" class="btn btn-primary mt-2">Submit Review</button>
+                </form>
             </div>
+            {% endif %}
+
+            {% for review in reviews %}
+            <div class="listing-detail-review-card d-flex mb-3">
+                 {% if review.author.profile.avatar and review.author.profile.avatar.url %}
+                <img src="{{ review.author.profile.avatar.url }}" class="listing-detail-review-avatar" alt="{{ review.author.username }}'s avatar">
+                {% else %}
+                <img src="{% static 'images/default_avatar.svg' %}" class="listing-detail-review-avatar" alt="Default avatar">
+                {% endif %}
+                <div class="ms-3">
+                    <strong class="text-dark">{{ review.author.username }}</strong>
+                    <div class="listing-detail-review-rating">
+                        {% for i in "12345"|make_list %}
+                        <i class="{% if forloop.counter <= review.rating %}fas{% else %}far{% endif %} fa-star"></i>
+                        {% endfor %}
+                    </div>
+                    <p class="text-muted small mb-1">{{ review.created_at|date:"F j, Y" }}</p>
+                    <p class="mb-0">{{ review.comment }}</p>
+                </div>
+            </div>
+            {% empty %}
+            <p>No reviews for this listing yet.</p>
+            {% endfor %}
         </div>
     </div>
 </div>
