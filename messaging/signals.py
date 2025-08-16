@@ -10,29 +10,10 @@ from accounts.models import Notification
 from messaging.models import Message
 from listings.models import Review
 
-# Define a custom signal for chat messages
-chat_message_signal = Signal()
-
-# The old post_save receiver has been removed to prevent duplicate broadcasts.
-# The view now explicitly calls this signal.
-@receiver(chat_message_signal, sender=Message)
-def broadcast_chat_message(sender, instance, created, temp_id, **kwargs):
-    if created:
-        timestamp_format = '%b. %d, %Y, %#I:%M %p' if platform.system() == 'Windows' else '%b. %d, %Y, %-I:%M %p'
-        message_data = {
-            "type": "chat_message",
-            "message": instance.text,
-            "sender": instance.sender.username,
-            "timestamp": instance.timestamp.strftime(timestamp_format),
-            "image_url": instance.image.url if instance.image else None,
-            "temp_id": temp_id
-        }
-
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f"chat_{instance.conversation.pk}",
-            message_data
-        )
+# The chat message broadcast is now handled directly in the view to pass temp_id
+# so we remove the signal receiver here to avoid duplicate broadcasts.
+# We keep the signal for future use if needed, but the receiver is gone.
+# chat_message_signal = Signal() # This is already defined in the original file
 
 @receiver(post_save, sender=Review)
 def create_review_notification(sender, instance, created, **kwargs):

@@ -6,7 +6,10 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db.models import Prefetch
 from django.contrib.auth.models import User
-from django.db import models # New import for models
+from django.db import models  # New import for models
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+import platform
 
 from .models import Conversation, Message
 from .forms import MessageForm
@@ -23,7 +26,8 @@ class InboxView(LoginRequiredMixin, ListView):
             Prefetch('participants', queryset=User.objects.all().select_related('profile')),
             Prefetch('messages', queryset=Message.objects.order_by('-timestamp'))
         ).annotate(
-            unread_count=models.Count('messages', filter=models.Q(messages__is_read=False, messages__receiver=self.request.user))
+            unread_count=models.Count('messages',
+                                      filter=models.Q(messages__is_read=False, messages__receiver=self.request.user))
         ).order_by('-updated_at')
 
 
@@ -61,14 +65,30 @@ class ConversationDetailView(LoginRequiredMixin, DetailView):
             message.sender = request.user
             message.receiver = recipient
             message.save()
-            return redirect('messaging:conversation_detail', pk=conversation.pk)
+
+            # Broadcast the new message via WebSocket
+            channel_layer = get_channel_layer()
+            timestamp_format = '%b. %d, %Y, %#I:%M %p' if platform.system() == 'Windows' else '%b. %d, %Y, %-I:%M %p'
+
+            message_data = {
+                "type": "chat_message",
+                "message": message.text,
+                "sender": message.sender.username,
+                "timestamp": message.timestamp.strftime(timestamp_format),
+                "image_url": message.image.url if message.image else None,
+                "temp_id": request.POST.get('temp_id')  # Pass the temp_id from the form data
+            }
+
+            async_to_sync(channel_layer.group_send)(
+                f"chat_{conversation.pk}",
+                message_data
+            )
+            return JsonResponse({'status': 'ok'})
         else:
-            context = self.get_context_data()
-            context['form'] = form
-            return self.render_to_response(context)
+            # If the form is invalid, return a JSON response with errors
+            return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
 
 
-# ... (keep the send_message view as it is) ...
 @login_required
 def send_message(request, username):
     recipient = get_object_or_404(User, username=username)
@@ -95,7 +115,28 @@ def send_message(request, username):
             message.sender = request.user
             message.receiver = recipient
             message.save()
-            return redirect('messaging:conversation_detail', pk=conversation.pk)
+
+            # Broadcast the new message via WebSocket
+            channel_layer = get_channel_layer()
+            timestamp_format = '%b. %d, %Y, %#I:%M %p' if platform.system() == 'Windows' else '%b. %d, %Y, %-I:%M %p'
+
+            message_data = {
+                "type": "chat_message",
+                "message": message.text,
+                "sender": message.sender.username,
+                "timestamp": message.timestamp.strftime(timestamp_format),
+                "image_url": message.image.url if message.image else None,
+                "temp_id": request.POST.get('temp_id')  # Pass the temp_id from the form data
+            }
+
+            async_to_sync(channel_layer.group_send)(
+                f"chat_{conversation.pk}",
+                message_data
+            )
+            return JsonResponse({'status': 'ok', 'conversation_pk': conversation.pk})
+        else:
+            # If the form is invalid, return a JSON response with errors
+            return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
     else:
         form = MessageForm()
 
