@@ -278,8 +278,8 @@ def checkout(request):
                     checkout_instance.listing = listing
                     checkout_instance.quantity = item.quantity
 
-                    # bug: Fix - Set payment method before saving
-                    checkout_instance.payment_method = request.POST.get('payment_method')
+                    # refactor: Remove this line, as form.save() now handles the field correctly
+                    # checkout_instance.payment_method = request.POST.get('payment_method')
 
                     checkout_instance.save()
                     checkout_ids.append(checkout_instance.id)

@@ -37,8 +37,9 @@ class ReviewForm(forms.ModelForm):
 
 # --- New Checkout Form ---
 class CheckoutForm(forms.ModelForm):
+    # bug: The value from the form in checkout.html is 'COD', not 'cod'. Updated to match.
     PAYMENT_CHOICES = [
-        ('cod', 'Cash on Delivery'),
+        ('COD', 'Cash on Delivery'),
         # Add more payment options here in the future
     ]
     payment_method = forms.ChoiceField(choices=PAYMENT_CHOICES, widget=forms.RadioSelect)
