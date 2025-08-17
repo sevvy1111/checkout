@@ -1,5 +1,6 @@
 # listings/views.py
 # refactor: Use the custom manager and atomic transactions for better performance and data integrity
+import random
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
@@ -224,15 +225,6 @@ def view_cart(request):
 
 
 @login_required
-def remove_from_cart(request, pk):
-    cart_item = get_object_or_404(CartItem, pk=pk, cart__user=request.user)
-    listing_title = cart_item.listing.title
-    cart_item.delete()
-    messages.info(request, f"'{listing_title}' was removed from your cart.")
-    return redirect('listings:view_cart')
-
-
-@login_required
 def checkout(request):
     cart = get_object_or_404(Cart, user=request.user)
     cart_items = cart.items.all()
@@ -244,6 +236,10 @@ def checkout(request):
     total_price = cart_items.aggregate(
         total_price=Sum(F('quantity') * F('listing__price'))
     )['total_price']
+
+    # feature: Generate a random shipping fee between 100 and 500 for testing
+    shipping_fee = round(random.uniform(100, 500), 2)
+    grand_total = (total_price or 0) + shipping_fee
 
     if request.method == 'POST':
         checkout_form = CheckoutForm(request.POST)
@@ -283,13 +279,15 @@ def checkout(request):
                 return redirect('accounts:dashboard')
         else:
             return render(request, 'listings/checkout.html',
-                          {'cart_items': cart_items, 'form': checkout_form, 'total_price': total_price})
+                          {'cart_items': cart_items, 'form': checkout_form, 'total_price': total_price,
+                           'shipping_fee': shipping_fee, 'grand_total': grand_total})
 
     else:
         checkout_form = CheckoutForm()
 
     return render(request, 'listings/checkout.html',
-                  {'cart_items': cart_items, 'form': checkout_form, 'total_price': total_price})
+                  {'cart_items': cart_items, 'form': checkout_form, 'total_price': total_price,
+                   'shipping_fee': shipping_fee, 'grand_total': grand_total})
 
 
 @login_required
