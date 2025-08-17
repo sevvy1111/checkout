@@ -7,7 +7,7 @@ from django.template.loader import render_to_string
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required
-from django.db import transaction
+from django.db import transaction, models
 from django.http import JsonResponse, HttpResponseForbidden
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
@@ -130,6 +130,16 @@ class ListingDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Listing
     template_name = 'listings/listing_confirm_delete.html'
     success_url = reverse_lazy('accounts:dashboard')
+
+    def test_func(self):
+        return self.get_object().seller == self.request.user
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            return super().delete(request, *args, **kwargs)
+        except models.ProtectedError:
+            messages.error(request, 'This listing cannot be deleted as it has existing orders.')
+            return redirect('accounts:dashboard')
 
     def form_valid(self, form):
         messages.success(self.request, f"The listing '{self.object.title}' has been successfully deleted.")
