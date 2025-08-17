@@ -1,5 +1,5 @@
 # listings/context_processors.py
-from .models import CartItem
+from .models import CartItem, Category
 
 def cart_item_count(request):
     if request.user.is_authenticated:
@@ -10,3 +10,7 @@ def cart_item_count(request):
         except:
             return {'cart_item_count': 0}
     return {'cart_item_count': 0}
+
+
+def all_categories(request):
+    return {'all_categories': Category.objects.all()}
