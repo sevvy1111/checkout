@@ -29,9 +29,15 @@ class ConversationDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        conversation = self.get_object()
+
+        # Explicitly find the other participant
+        other_user = conversation.participants.exclude(id=self.request.user.id).first()
+        context['other_user'] = other_user
+
         context['form'] = MessageForm()
-        # Mark messages as read
-        self.object.messages.filter(receiver=self.request.user, is_read=False).update(is_read=True)
+        # Mark messages as read for the current user
+        conversation.messages.filter(receiver=self.request.user, is_read=False).update(is_read=True)
         return context
 
     def post(self, request, *args, **kwargs):
@@ -46,8 +52,6 @@ class ConversationDetailView(LoginRequiredMixin, DetailView):
             message.receiver = participants.exclude(id=request.user.id).first()
             message.save()
 
-            # The code block below that was causing the error has been removed.
-
             return redirect('messaging:conversation_detail', pk=self.object.pk)
         else:
             context = self.get_context_data()
@@ -60,7 +64,7 @@ def send_message_view(request, recipient_id):
     recipient = get_object_or_404(User, id=recipient_id)
     if request.user == recipient:
         messages.error(request, "You cannot send a message to yourself.")
-        return redirect('listings:listing_list')  # Or wherever appropriate
+        return redirect('listings:listing_list')
 
     # Find existing conversation or create a new one
     conversation = Conversation.objects.filter(participants=request.user).filter(participants=recipient).first()
