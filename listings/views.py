@@ -18,8 +18,8 @@ from .models import Listing, ListingImage, SavedItem, Review, Cart, CartItem, Ch
 from .forms import ListingForm, ReviewForm, CheckoutForm
 from .filters import ListingFilter
 
-# feature: Import messaging models to send review notifications
-from messaging.models import Thread, Message
+# bug: Import the correct messaging model name
+from messaging.models import Conversation, Message
 
 
 class ListingListView(ListView):
@@ -81,16 +81,20 @@ class ListingDetailView(DetailView):
                 reviewer = request.user
 
                 if seller != reviewer:
-                    # Check for an existing thread between the users
-                    thread = Thread.objects.filter(participants=seller).filter(participants=reviewer).first()
+                    # bug: Use the correct model name (Conversation instead of Thread)
+                    # Check for an existing conversation between the users
+                    conversation = Conversation.objects.filter(participants=seller).filter(
+                        participants=reviewer).first()
 
-                    if not thread:
-                        # If no thread exists, create a new one
-                        thread = Thread.objects.create()
-                        thread.participants.add(seller, reviewer)
+                    if not conversation:
+                        # If no conversation exists, create a new one
+                        conversation = Conversation.objects.create()
+                        conversation.participants.add(seller, reviewer)
 
                     message_body = f"A new review with a rating of {review.rating}/5 has been posted on your listing: '{self.object.title}'."
-                    Message.objects.create(thread=thread, sender=reviewer, body=message_body)
+                    # bug: Correctly create a new message with the appropriate fields
+                    Message.objects.create(conversation=conversation, sender=reviewer, receiver=seller,
+                                           text=message_body)
 
                     messages.success(request,
                                      "Your review has been posted successfully and the seller has been notified!")
