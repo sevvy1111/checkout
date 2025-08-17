@@ -32,6 +32,17 @@
                         </div>
                     {% endif %}
 
+                    {% comment %} Bug Fix: Display all field errors {% endcomment %}
+                    {% for field in form %}
+                        {% if field.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                {% for error in field.errors %}
+                                    {{ field.label }}: {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
                     <div class="checkout-form-section mb-4">
                         <h5 class="mb-3">Shipping Information</h5>
                         {{ form.full_name|as_crispy_field }}
