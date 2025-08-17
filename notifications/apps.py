@@ -1,4 +1,4 @@
-# sevvy1111/checkout/checkout-baa1ef489cd0a3ed08221be9d8b13c13223c8fd8/notifications/apps.py
+# sevvy1111/checkout/checkout-6284e1df24802e516d66595b54136462676a4c2c/notifications/apps.py
 from django.apps import AppConfig
 
 
@@ -8,4 +8,4 @@ class NotificationsConfig(AppConfig):
 
     def ready(self):
 
-        pass
+        import notifications.signals

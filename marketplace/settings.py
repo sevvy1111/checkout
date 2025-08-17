@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework',
     'notifications',
+    'daphne',
+    'channels',
 ]
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
