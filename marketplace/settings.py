@@ -71,10 +71,10 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'listings.context_processors.all_categories',
                 'listings.context_processors.cart_item_count',
                 'messaging.context_processors.all_conversations',
                 'messaging.context_processors.unread_message_count',
+                'notifications.context_processors.notifications_context',
             ],
         },
     },
@@ -138,6 +138,11 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
+
+# Media files (User-uploaded content)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

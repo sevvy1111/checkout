@@ -4,28 +4,17 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
-from django.db.models import Avg, F, Sum
+from django.db.models import Avg, F
 from cloudinary.models import CloudinaryField
 
 User = get_user_model()
 
-class Category(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    slug = models.SlugField(max_length=100, unique=True)
 
-    class Meta:
-        verbose_name_plural = "Categories"
-        ordering = ('name',)
-
-    def __str__(self):
-        return self.name
-
-    def get_absolute_url(self):
-        return reverse('listings:listing_list_by_category', args=[self.slug])
 # refactor: Create a custom manager to handle common queries like annotating average rating
 class ListingQuerySet(models.QuerySet):
     def with_avg_rating(self):
         return self.annotate(average_rating=Avg('reviews__rating'))
+
 
 class Listing(models.Model):
     STATUS_CHOICES = (
@@ -122,7 +111,7 @@ class Checkout(models.Model):
     )
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='checkouts')
-    listing = models.ForeignKey(Listing, on_delete=models.PROTECT) # Changed to PROTECT
+    listing = models.ForeignKey(Listing, on_delete=models.PROTECT)  # Changed to PROTECT
     quantity = models.PositiveIntegerField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
@@ -143,6 +132,3 @@ class Checkout(models.Model):
 
     def __str__(self):
         return f"Checkout of {self.quantity} x {self.listing.title} by {self.user.username}"
-
-# chore: Removed the `User.add_to_class` and the `average_rating` property.
-# This logic is now a more appropriately placed method on the Profile model.
