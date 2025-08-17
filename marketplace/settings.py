@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'whitenoise.runserver_nostatic',
+    'daphne',
     'django.contrib.staticfiles',
     'listings',
     'accounts',
@@ -45,7 +46,6 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework',
     'notifications',
-    'daphne',
     'channels',
 ]
 
