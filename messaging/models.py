@@ -23,8 +23,8 @@ class Message(models.Model):
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_messages')
     receiver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_messages')
-    text = models.TextField()
-    # Change ImageField to CloudinaryField for persistent storage
+    # This line is the fix: ensure blank=True is present
+    text = models.TextField(blank=True)
     image = CloudinaryField('message_image', blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
