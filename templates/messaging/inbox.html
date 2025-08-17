@@ -1,40 +1,112 @@
 {% extends "base.html" %}
-{% load static %}
-
-{% block title %}Inbox{% endblock %}
 
 {% block content %}
-<div class="container my-4">
-    <h2>Inbox</h2>
-    <hr>
-    <div class="list-group">
+<div class="container my-5">
+    <h1 class="mb-4">Inbox</h1>
+    <div class="list-group rounded shadow-sm">
         {% for conversation in conversations %}
-            {# The syntax here is now corrected to user=user #}
-            {% with other_user=conversation.get_other_user user=user %}
-                <a href="{% url 'messaging:conversation_detail' pk=conversation.pk %}" class="list-group-item list-group-item-action">
-                    <div class="d-flex w-100 justify-content-between align-items-center">
-                        <div class="d-flex align-items-center">
-                            {% if other_user.profile.avatar %}
-                                <img src="{{ other_user.profile.avatar.url }}" class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover; margin-right: 15px;">
-                            {% else %}
-                                <img src="{% static 'images/default_avatar.svg' %}" class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover; margin-right: 15px;">
-                            {% endif %}
-                            <div>
-                                <h5 class="mb-1">{{ other_user.username }}</h5>
-                                <p class="mb-1 text-muted">
-                                    {% if conversation.messages.last %}
-                                        {{ conversation.messages.last.text|truncatechars:50 }}
+            <a href="{{ conversation.get_absolute_url }}" class="list-group-item list-group-item-action d-flex align-items-center p-3" data-conversation-pk="{{ conversation.pk }}">
+                {% for participant in conversation.participants.all %}
+                    {% if participant != request.user %}
+                        <img src="{{ participant.profile.display_avatar_url }}" alt="{{ participant.username }}'s avatar" class="rounded-circle me-3" width="50" height="50">
+                        <div class="d-flex flex-column me-auto">
+                            <div class="d-flex justify-content-between w-100">
+                                <h5 class="mb-0 fw-bold">
+                                    {{ participant.username }}
+                                    {% if conversation.unread_count > 0 %}
+                                        <span class="badge bg-danger rounded-pill ms-2">{{ conversation.unread_count }}</span>
                                     {% endif %}
-                                </p>
+                                </h5>
+                                <small class="conversation-timestamp text-muted">{{ conversation.updated_at|date:"M j, Y" }}</small>
                             </div>
+                            <p class="mb-0 conversation-last-message text-muted small">
+                                {% if conversation.messages.first %}
+                                    {{ conversation.messages.first.text|truncatechars:40 }}
+                                {% else %}
+                                    No messages yet.
+                                {% endif %}
+                            </p>
                         </div>
-                        <small class="text-muted">{{ conversation.last_message_time|timesince }} ago</small>
-                    </div>
-                </a>
-            {% endwith %}
+                    {% endif %}
+                {% endfor %}
+            </a>
         {% empty %}
-            <p class="text-center text-muted">You have no conversations.</p>
+            <div class="alert alert-info text-center m-4" role="alert">
+                You have no conversations.
+            </div>
         {% endfor %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const conversationsList = document.querySelector('.list-group');
+
+        const inboxSocket = new WebSocket(
+            'ws://'
+            + window.location.host
+            + '/ws/notifications/'
+        );
+
+        inboxSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+
+            if (data.type === 'new_message' && data.conversation_pk) {
+                const conversationLink = conversationsList.querySelector(`[data-conversation-pk="${data.conversation_pk}"]`);
+                if (conversationLink) {
+                    // Update existing conversation
+                    const lastMessageElement = conversationLink.querySelector('.conversation-last-message');
+                    if (lastMessageElement) {
+                        lastMessageElement.textContent = data.message_text.substring(0, 40) + '...';
+                    }
+                    const timestampElement = conversationLink.querySelector('.conversation-timestamp');
+                    if (timestampElement) {
+                        timestampElement.textContent = data.timestamp;
+                    }
+                    const unreadBadge = conversationLink.querySelector('.badge');
+                    if (unreadBadge) {
+                        unreadBadge.textContent = parseInt(unreadBadge.textContent) + 1;
+                    } else {
+                        const newBadge = document.createElement('span');
+                        newBadge.className = 'badge bg-danger rounded-pill ms-2';
+                        newBadge.textContent = 1;
+                        conversationLink.querySelector('h5').appendChild(newBadge);
+                    }
+                    conversationsList.prepend(conversationLink);
+                } else {
+                    // This is a new conversation for the user, so we have to dynamically add it
+                    const newConversationHTML = `
+                        <a href="/msgs/conversation/${data.conversation_pk}/" class="list-group-item list-group-item-action d-flex align-items-center p-3" data-conversation-pk="${data.conversation_pk}">
+                            <img src="${data.sender_avatar_url}" alt="${data.sender_username}'s avatar" class="rounded-circle me-3" width="50" height="50">
+                            <div class="d-flex flex-column me-auto">
+                                <div class="d-flex justify-content-between w-100">
+                                    <h5 class="mb-0 fw-bold">
+                                        ${data.sender_username}
+                                        <span class="badge bg-danger rounded-pill ms-2">1</span>
+                                    </h5>
+                                    <small class="conversation-timestamp text-muted">${data.timestamp}</small>
+                                </div>
+                                <p class="mb-0 conversation-last-message text-muted small">
+                                    ${data.message_text.substring(0, 40)}...
+                                </p>
+                            </div>
+                        </a>
+                    `;
+                    conversationsList.insertAdjacentHTML('afterbegin', newConversationHTML);
+                    // Remove the "no conversations" alert if it exists
+                    const noConversationsAlert = conversationsList.querySelector('.alert-info');
+                    if(noConversationsAlert) {
+                        noConversationsAlert.remove();
+                    }
+                }
+            }
+        };
+
+        inboxSocket.onclose = function(e) {
+            console.error('Inbox socket closed unexpectedly');
+        };
+    });
+</script>
 {% endblock %}
