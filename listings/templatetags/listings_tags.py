@@ -1,6 +1,6 @@
 # listings/templatetags/listings_tags.py
 from django import template
-
+from listings.models import Category
 register = template.Library()
 
 @register.filter
@@ -30,3 +30,6 @@ def cart_total(items):
     """Calculates the total price of all items in a cart."""
     total = sum(item.listing.price * item.quantity for item in items)
     return total
+@register.simple_tag
+def get_categories():
+    return Category.objects.all()
