@@ -18,6 +18,9 @@ from .models import Listing, ListingImage, SavedItem, Review, Cart, CartItem, Ch
 from .forms import ListingForm, ReviewForm, CheckoutForm
 from .filters import ListingFilter
 
+# feature: Import messaging models to send review notifications
+from messaging.models import Thread, Message
+
 
 class ListingListView(ListView):
     model = Listing
@@ -67,10 +70,33 @@ class ListingDetailView(DetailView):
         self.object = self.get_object()
         form = ReviewForm(request.POST)
         if form.is_valid():
-            review = form.save(commit=False)
-            review.listing = self.object
-            review.author = request.user
-            review.save()
+            with transaction.atomic():
+                review = form.save(commit=False)
+                review.listing = self.object
+                review.author = request.user
+                review.save()
+
+                # feature: Notify seller of new review via the messaging app
+                seller = self.object.seller
+                reviewer = request.user
+
+                if seller != reviewer:
+                    # Check for an existing thread between the users
+                    thread = Thread.objects.filter(participants=seller).filter(participants=reviewer).first()
+
+                    if not thread:
+                        # If no thread exists, create a new one
+                        thread = Thread.objects.create()
+                        thread.participants.add(seller, reviewer)
+
+                    message_body = f"A new review with a rating of {review.rating}/5 has been posted on your listing: '{self.object.title}'."
+                    Message.objects.create(thread=thread, sender=reviewer, body=message_body)
+
+                    messages.success(request,
+                                     "Your review has been posted successfully and the seller has been notified!")
+                else:
+                    messages.success(request, "Your review has been posted successfully!")
+
             return redirect(self.object.get_absolute_url())
         else:
             context = self.get_context_data()
@@ -369,15 +395,17 @@ def view_receipt(request, checkout_ids):
         messages.error(request, "Invalid receipt.")
         return redirect('accounts:dashboard')
 
-    grand_total = checkouts.aggregate(
-        grand_total=Sum(F('quantity') * F('listing__price'))
-    )['grand_total']
+    subtotal = checkouts.aggregate(
+        subtotal=Sum(F('quantity') * F('listing__price'))
+    )['subtotal']
 
-    # refactor: Get the shipping fee directly from the Checkout model
+    # bug: Correctly calculate grand total by adding subtotal and shipping fee
     shipping_fee = checkouts.first().shipping_fee if checkouts.first() else decimal.Decimal('0.00')
+    grand_total = subtotal + shipping_fee
 
     context = {
         'checkouts': checkouts,
+        'subtotal': subtotal,
         'grand_total': grand_total,
         'shipping_fee': shipping_fee
     }
