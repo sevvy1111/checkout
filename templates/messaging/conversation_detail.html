@@ -44,13 +44,13 @@
             {% endfor %}
         </div>
         <div class="card-footer">
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="input-group">
-                    {{ form.text|as_crispy_field }}
-                    {{ form.image|as_crispy_field }}
-                    <button class="btn btn-primary" type="submit">Send</button>
-                </div>
+            <form id="chat-form" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            <input type="file" id="chat-image-input" name="image" class="form-control me-2" accept="image/*">
+                            <input type="text" id="chat-message-input" name="text" class="form-control" placeholder="Type a message...">
+                            <button class="btn btn-primary" id="chat-message-submit" type="submit">Send</button>
+                        </div>
             </form>
         </div>
     </div>
