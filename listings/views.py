@@ -194,7 +194,7 @@ def toggle_save_listing(request, pk):
 def filter_listings(request):
     # refactor: Use the custom manager method
     filter_queryset = Listing.objects.all().select_related('seller').with_avg_rating()
-    filter = ListingFilter(self.request.GET, queryset=filter_queryset)
+    filter = ListingFilter(request.GET, queryset=filter_queryset)
     saved_listing_ids = []
     if request.user.is_authenticated:
         saved_listing_ids = SavedItem.objects.filter(user=request.user).values_list('listing__id', flat=True)
@@ -383,9 +383,11 @@ def update_cart_item(request, pk):
 def invoice_view(request, pk):
     checkout = get_object_or_404(Checkout, pk=pk, listing__seller=request.user)
     total_price = checkout.listing.price * checkout.quantity
+    grand_total = total_price + checkout.shipping_fee
     context = {
-        'checkout': checkout,
+        'order': checkout,
         'total_price': total_price,
+        'grand_total': grand_total,
     }
     return render(request, 'listings/invoice.html', context)
 
@@ -405,7 +407,7 @@ def view_receipt(request, checkout_ids):
 
     # bug: Correctly calculate grand total by adding subtotal and shipping fee
     shipping_fee = checkouts.first().shipping_fee if checkouts.first() else decimal.Decimal('0.00')
-    grand_total = subtotal + shipping_fee
+    grand_total = (subtotal or 0) + shipping_fee
 
     context = {
         'checkouts': checkouts,

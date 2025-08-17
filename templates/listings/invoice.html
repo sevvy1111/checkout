@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load listings_tags %}
 
 {% block title %}Invoice #{{ order.id }}{% endblock %}
 
@@ -19,16 +20,15 @@
             <div class="card p-3 mb-3 h-100">
                 <h6 class="text-muted">Billed To</h6>
                 <p class="mb-0 fw-bold">{{ order.full_name }}</p>
-                <p class="mb-0">{{ order.street_address }}</p>
-                <p class="mb-0">{{ order.city }}, {{ order.province }}</p>
-                <p class="mb-0">{{ order.postal_code }}</p>
+                <p class="mb-0">{{ order.shipping_address }}</p>
+                <p class="mb-0">{{ order.shipping_city }}, {{ order.shipping_postal_code }}</p>
             </div>
         </div>
         <div class="col-md-6">
             <div class="card p-3 mb-3 h-100">
                 <h6 class="text-muted">Payment Method</h6>
-                <p class="mb-0 fw-bold">{{ order.payment_method }}</p>
-                <p class="mb-0 text-success">Order Status: {{ order.status }}</p>
+                <p class="mb-0 fw-bold">Cash on Delivery</p>
+                <p class="mb-0 text-success">Order Status: {{ order.get_status_display }}</p>
             </div>
         </div>
     </div>
@@ -44,14 +44,12 @@
                 </tr>
             </thead>
             <tbody>
-                {% for item in order.items.all %}
                 <tr>
-                    <td>{{ item.listing.title }}</td>
-                    <td class="text-end">₱{{ item.listing.price|philippine_currency }}</td>
-                    <td class="text-end">{{ item.quantity }}</td>
-                    <td class="text-end fw-bold">₱{{ item.total_price|philippine_currency }}</td>
+                    <td>{{ order.listing.title }}</td>
+                    <td class="text-end">₱{{ order.listing.price|philippine_currency }}</td>
+                    <td class="text-end">{{ order.quantity }}</td>
+                    <td class="text-end fw-bold">₱{{ total_price|philippine_currency }}</td>
                 </tr>
-                {% endfor %}
             </tbody>
         </table>
     </div>
@@ -61,7 +59,7 @@
             <div class="invoice-summary-card p-4">
                 <div class="d-flex justify-content-between mb-2">
                     <span>Subtotal</span>
-                    <span>₱{{ order.total_price|philippine_currency }}</span>
+                    <span>₱{{ total_price|philippine_currency }}</span>
                 </div>
                 <div class="d-flex justify-content-between mb-2">
                     <span>Shipping</span>
@@ -70,7 +68,7 @@
                 <hr>
                 <div class="d-flex justify-content-between fw-bold fs-5">
                     <span>Grand Total</span>
-                    <span>₱{{ order.grand_total|philippine_currency }}</span>
+                    <span>₱{{ grand_total|philippine_currency }}</span>
                 </div>
             </div>
         </div>

@@ -26,10 +26,12 @@ def profile_view(request):
         p_form = ProfileForm(instance=profile)
 
     user_listings = Listing.objects.filter(seller=request.user).order_by('-created')
+    reviews = Review.objects.filter(listing__seller=request.user).order_by('-created_at')
 
     context = {
         'p_form': p_form,
-        'user_listings': user_listings
+        'user_listings': user_listings,
+        'reviews': reviews
     }
     return render(request, 'accounts/profile.html', context)
 
@@ -51,10 +53,12 @@ def public_profile_view(request, username):
     user = get_object_or_404(User, username=username)
     profile = user.profile
     user_listings = Listing.objects.filter(seller=user).order_by('-created')
+    reviews = Review.objects.filter(listing__seller=user).order_by('-created_at')
     context = {
         'user': user,
         'profile': profile,
         'user_listings': user_listings,
+        'reviews': reviews,
     }
     return render(request, 'accounts/profile_detail.html', context)
 
@@ -149,9 +153,11 @@ def receipt_view(request, pk):
     receipt = get_object_or_404(Checkout, pk=pk, user=request.user)
 
     total_price = receipt.listing.price * receipt.quantity
+    grand_total = total_price + receipt.shipping_fee
 
     context = {
         'receipt': receipt,
         'total_price': total_price,
+        'grand_total': grand_total
     }
     return render(request, 'accounts/receipt.html', context)

@@ -58,7 +58,8 @@
             <div class="d-flex justify-content-end mt-4">
                 <div class="text-end">
                     <h5>Subtotal: ₱{{ total_price|philippine_currency }}</h5>
-                    <h4 class="fw-bold text-success">Grand Total: ₱{{ total_price|philippine_currency }}</h4>
+                    <h5>Shipping Fee: ₱{{ receipt.shipping_fee|philippine_currency }}</h5>
+                    <h4 class="fw-bold text-success">Grand Total: ₱{{ grand_total|philippine_currency }}</h4>
                 </div>
             </div>
             

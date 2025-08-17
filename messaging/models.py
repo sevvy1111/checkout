@@ -3,6 +3,7 @@
 from django.db import models
 from django.conf import settings
 from django.urls import reverse
+from cloudinary.models import CloudinaryField
 
 class Conversation(models.Model):
     participants = models.ManyToManyField(
@@ -30,7 +31,7 @@ class Message(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_messages'
     )
     text = models.TextField(blank=True, null=True)
-    image = models.ImageField(upload_to='messages/%Y/%m/%d/', blank=True, null=True)
+    image = CloudinaryField('message_image', blank=True, null=True)
     is_read = models.BooleanField(default=False)
     timestamp = models.DateTimeField(auto_now_add=True)
 
