@@ -1,4 +1,4 @@
-# listings/views.py
+# sevvy1111/checkout/checkout-6284e1df24802e516d66595b54136462676a4c2c/listings/views.py
 # refactor: Use the custom manager and atomic transactions for better performance and data integrity
 import random
 import decimal
@@ -18,9 +18,9 @@ from .models import Listing, ListingImage, SavedItem, Review, Cart, CartItem, Ch
 from .forms import ListingForm, ReviewForm, CheckoutForm
 from .filters import ListingFilter
 
-# bug: Import the correct messaging model name
 from messaging.models import Conversation, Message
 from notifications.models import Notification
+
 
 class ListingListView(ListView):
     model = Listing
@@ -33,7 +33,8 @@ class ListingListView(ListView):
         # refactor: Use the custom manager method to annotate average rating
         queryset = queryset.select_related('seller').with_avg_rating()
         self.filterset = ListingFilter(self.request.GET, queryset=queryset)
-        return self.filterset.qs
+        # Apply explicit ordering to prevent pagination warnings and ensure consistency
+        return self.filterset.qs.order_by('-created')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -64,6 +65,12 @@ class ListingDetailView(DetailView):
             context['has_reviewed'] = Review.objects.filter(listing=self.object, author=self.request.user).exists()
         else:
             context['has_reviewed'] = False
+
+        # Calculate the seller's average rating across all their listings
+        seller = self.object.seller
+        seller_average_rating = Review.objects.filter(listing__seller=seller).aggregate(Avg('rating'))['rating__avg']
+        context['seller_average_rating'] = seller_average_rating
+
         return context
 
     def post(self, request, *args, **kwargs):
@@ -81,7 +88,6 @@ class ListingDetailView(DetailView):
                 reviewer = request.user
 
                 if seller != reviewer:
-                    # bug: Use the correct model name (Conversation instead of Thread)
                     # Check for an existing conversation between the users
                     conversation = Conversation.objects.filter(participants=seller).filter(
                         participants=reviewer).first()
@@ -92,7 +98,6 @@ class ListingDetailView(DetailView):
                         conversation.participants.add(seller, reviewer)
 
                     message_body = f"A new review with a rating of {review.rating}/5 has been posted on your listing: '{self.object.title}'."
-                    # bug: Correctly create a new message with the appropriate fields
                     Message.objects.create(conversation=conversation, sender=reviewer, receiver=seller,
                                            text=message_body)
 
@@ -164,7 +169,6 @@ class ListingDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def test_func(self):
         return self.get_object().seller == self.request.user
 
-    # bug: Handle ProtectedError gracefully
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
         success_url = self.get_success_url()
