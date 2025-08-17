@@ -65,7 +65,7 @@
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" id="notification-list">
                   {% if unread_notifications %}
                     {% for notification in unread_notifications %}
-                      <li><a class="dropdown-item" href="{{ notification.link }}">{{ notification.message }}</a></li>
+                      <li><a class="dropdown-item" href="{% url 'notifications:read_and_redirect' notification.id %}">{{ notification.message }}</a></li>
                     {% endfor %}
                   {% else %}
                     <li class="p-2 text-muted text-center">No new notifications</li>
