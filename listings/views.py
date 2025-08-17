@@ -278,8 +278,8 @@ def checkout(request):
                     checkout_instance.listing = listing
                     checkout_instance.quantity = item.quantity
 
-                    # refactor: Remove this line, as form.save() now handles the field correctly
-                    # checkout_instance.payment_method = request.POST.get('payment_method')
+                    # bug: Save shipping fee to the Checkout instance
+                    checkout_instance.shipping_fee = shipping_fee
 
                     checkout_instance.save()
                     checkout_ids.append(checkout_instance.id)
@@ -362,13 +362,8 @@ def view_receipt(request, checkout_ids):
         grand_total=Sum(F('quantity') * F('listing__price'))
     )['grand_total']
 
-    # The shipping fee was a random number, so we can't recalculate it exactly.
-    # For a real application, this should be stored on a parent Order object.
-    # For now, we will add a placeholder or assume a fixed one for the receipt.
-    # We will grab the first checkout's shipping fee for simplicity.
-    shipping_fee = checkouts.first().shipping_fee if checkouts.first() and hasattr(checkouts.first(),
-                                                                                   'shipping_fee') else decimal.Decimal(
-        '0.00')
+    # refactor: Get the shipping fee directly from the Checkout model
+    shipping_fee = checkouts.first().shipping_fee if checkouts.first() else decimal.Decimal('0.00')
 
     context = {
         'checkouts': checkouts,
