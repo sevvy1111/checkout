@@ -259,6 +259,8 @@ def checkout(request):
                 # refactor: Use select_for_update to prevent race conditions
                 cart_items = cart.items.all().select_for_update().select_related('listing')
 
+                checkout_ids = []
+
                 # Check stock availability for all items before proceeding
                 for item in cart_items:
                     if item.quantity > item.listing.stock:
@@ -276,6 +278,7 @@ def checkout(request):
                     checkout_instance.listing = listing
                     checkout_instance.quantity = item.quantity
                     checkout_instance.save()
+                    checkout_ids.append(checkout_instance.id)
 
                     # Atomically update stock using F() expression
                     listing.stock = F('stock') - item.quantity
@@ -286,7 +289,7 @@ def checkout(request):
                     item.delete()
 
                 messages.success(request, "Your order has been placed successfully!")
-                return redirect('accounts:dashboard')
+                return redirect('listings:view_receipt', checkout_ids=','.join(map(str, checkout_ids)))
         else:
             return render(request, 'listings/checkout.html',
                           {'cart_items': cart_items, 'form': checkout_form, 'total_price': total_price,
@@ -337,3 +340,32 @@ def invoice_view(request, pk):
         'total_price': total_price,
     }
     return render(request, 'listings/invoice.html', context)
+
+
+@login_required
+def view_receipt(request, checkout_ids):
+    ids = [int(id) for id in checkout_ids.split(',')]
+    checkouts = Checkout.objects.filter(id__in=ids, user=request.user).select_related('listing')
+
+    if not checkouts:
+        messages.error(request, "Invalid receipt.")
+        return redirect('accounts:dashboard')
+
+    grand_total = checkouts.aggregate(
+        grand_total=Sum(F('quantity') * F('listing__price'))
+    )['grand_total']
+
+    # The shipping fee was a random number, so we can't recalculate it exactly.
+    # For a real application, this should be stored on a parent Order object.
+    # For now, we will add a placeholder or assume a fixed one for the receipt.
+    # We will grab the first checkout's shipping fee for simplicity.
+    shipping_fee = checkouts.first().shipping_fee if checkouts.first() and hasattr(checkouts.first(),
+                                                                                   'shipping_fee') else decimal.Decimal(
+        '0.00')
+
+    context = {
+        'checkouts': checkouts,
+        'grand_total': grand_total,
+        'shipping_fee': shipping_fee
+    }
+    return render(request, 'listings/receipt.html', context)

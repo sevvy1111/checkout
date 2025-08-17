@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load listings_tags %}
+
+{% block title %}Order Receipt{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card p-4 shadow">
+                <div class="card-header text-center bg-primary text-white">
+                    <h4 class="mb-0">Order Receipt</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h5 class="card-title">Thank you for your order!</h5>
+                        <p class="text-muted">Your order has been placed successfully. Below is a summary of your purchase.</p>
+                    </div>
+                    
+                    <h6 class="border-bottom pb-2">Order Details</h6>
+                    <ul class="list-group list-group-flush">
+                        {% for item in checkouts %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <img src="{{ item.listing.images.first.image.url }}" class="order-summary-image me-2" alt="{{ item.listing.title }}">
+                                <span class="text-muted">{{ item.quantity }}x</span>
+                                <span class="ms-2 fw-bold">{{ item.listing.title }}</span>
+                            </div>
+                            <span>₱{{ item.total_price|philippine_currency }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>Subtotal</strong>
+                        <span>₱{{ grand_total|philippine_currency }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>Shipping Fee</strong>
+                        <span>₱{{ shipping_fee|philippine_currency }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between fw-bold fs-5 text-primary">
+                        <span>Grand Total</span>
+                        <span>₱{{ grand_total|philippine_currency }}</span>
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{% url 'accounts:dashboard' %}" class="btn btn-secondary mt-3">Back to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

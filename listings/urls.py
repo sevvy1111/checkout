@@ -26,4 +26,7 @@ urlpatterns = [
 
     # URL for invoice generation
     path('checkout/<int:pk>/invoice/', views.invoice_view, name='invoice'),
+
+    # New URL for the consolidated order receipt
+    path('receipt/<str:checkout_ids>/', views.view_receipt, name='view_receipt'),
 ]
