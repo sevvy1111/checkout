@@ -20,7 +20,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'default-django-secret-key-for-local-d
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost').split(',')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost', 'checkoutph.onrender.com').split(',')
 
 # Application definition
 
