@@ -10,7 +10,7 @@
             <div class="card">
                 <div class="card-header">
                     <h4 class="mb-0">
-                        <img src="{{ recipient.profile.avatar.url }}" alt="{{ recipient.username }}'s avatar" class="rounded-circle me-2" width="40" height="40">
+                        <img src="{{ recipient.profile.display_avatar_url }}" alt="{{ recipient.username }}'s avatar" class="rounded-circle me-2" width="40" height="40">
                         <a href="{% url 'accounts:public_profile' username=recipient.username %}" class="text-decoration-none text-dark">
                             Chat with {{ recipient.username }}
                         </a>
@@ -20,7 +20,7 @@
                     {% for message in conversation.messages.all %}
                         <div class="d-flex mb-2 {% if message.sender == request.user %}justify-content-end{% endif %}">
                             <div class="d-flex align-items-end {% if message.sender == request.user %}flex-row-reverse{% endif %}">
-                                <img src="{{ message.sender.profile.avatar.url }}" alt="{{ message.sender.username }}'s avatar" class="rounded-circle {% if message.sender == request.user %}ms-2{% else %}me-2{% endif %}" width="30" height="30">
+                                <img src="{{ message.sender.profile.display_avatar_url }}" alt="{{ message.sender.username }}'s avatar" class="rounded-circle {% if message.sender == request.user %}ms-2{% else %}me-2{% endif %}" width="30" height="30">
                                 <div class="p-2 rounded {% if message.sender == request.user %}bg-primary text-white{% else %}bg-light{% endif %}">
                                     <strong>{{ message.sender.username }}</strong>
                                     {% if message.image %}
@@ -55,8 +55,8 @@
         const conversationId = JSON.parse(document.getElementById('conversation-id').textContent);
         const currentUsername = JSON.parse(document.getElementById('current-username').textContent);
         const recipientUsername = JSON.parse(document.getElementById('recipient-username').textContent);
-        const currentUserAvatarUrl = "{{ request.user.profile.avatar.url }}";
-        const recipientAvatarUrl = "{{ recipient.profile.avatar.url }}";
+        const currentUserAvatarUrl = "{{ request.user.profile.display_avatar_url }}";
+        const recipientAvatarUrl = "{{ recipient.profile.display_avatar_url }}";
 
         const chatLog = document.getElementById('chat-log');
         const chatForm = document.getElementById('chat-form');
