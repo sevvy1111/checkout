@@ -277,6 +277,10 @@ def checkout(request):
                     checkout_instance.user = request.user
                     checkout_instance.listing = listing
                     checkout_instance.quantity = item.quantity
+
+                    # bug: Fix - Set payment method before saving
+                    checkout_instance.payment_method = request.POST.get('payment_method')
+
                     checkout_instance.save()
                     checkout_ids.append(checkout_instance.id)
 
@@ -291,6 +295,9 @@ def checkout(request):
                 messages.success(request, "Your order has been placed successfully!")
                 return redirect('listings:view_receipt', checkout_ids=','.join(map(str, checkout_ids)))
         else:
+            # bug: Add an error message for invalid form data
+            messages.error(request,
+                           "There was an error with your checkout information. Please check the details below.")
             return render(request, 'listings/checkout.html',
                           {'cart_items': cart_items, 'form': checkout_form, 'total_price': total_price,
                            'shipping_fee': shipping_fee, 'grand_total': grand_total})
