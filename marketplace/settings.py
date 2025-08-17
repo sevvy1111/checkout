@@ -21,8 +21,6 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = ['checkoutph.onrender.com', 'localhost', '127.0.0.1']
 CSRF_TRUSTED_ORIGINS = ['https://checkoutph.onrender.com']
 
-print(f"DEBUG value: {DEBUG}")
-print(f"ALLOWED_HOSTS: {ALLOWED_HOSTS}")
 # --- INSTALLED APPS & MIDDLEWARE ---
 INSTALLED_APPS = [
     'daphne',
@@ -42,7 +40,6 @@ INSTALLED_APPS = [
     'accounts',
     'listings',
     'messaging',
-    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -91,12 +88,21 @@ CHANNEL_LAYERS = {
 }
 
 # --- DATABASE ---
-DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:///db.sqlite3',
-        conn_max_age=600
-    )
-}
+if 'DATABASE_URL' in os.environ:
+    DATABASES = {
+        'default': dj_database_url.config(
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=True,
+        )
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # --- AUTHENTICATION ---
 AUTH_PASSWORD_VALIDATORS = [

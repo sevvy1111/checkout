@@ -325,14 +325,6 @@ def checkout(request):
                     checkout_instance.save()
                     checkout_ids.append(checkout_instance.id)
 
-                    # Create a notification for the seller
-                    Notification.objects.create(
-                        recipient=listing.seller,
-                        message=f"You have a new order for '{listing.title}'.",
-                        notification_type='new_order',
-                        link=reverse('accounts:seller_orders')
-                    )
-
                     # Atomically update stock using F() expression
                     listing.stock = F('stock') - item.quantity
                     if listing.stock == 0:
