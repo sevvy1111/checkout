@@ -9,6 +9,19 @@ from cloudinary.models import CloudinaryField
 
 User = get_user_model()
 
+class Category(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=100, unique=True)
+
+    class Meta:
+        verbose_name_plural = "Categories"
+        ordering = ('name',)
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse('listings:listing_list_by_category', args=[self.slug])
 # refactor: Create a custom manager to handle common queries like annotating average rating
 class ListingQuerySet(models.QuerySet):
     def with_avg_rating(self):
