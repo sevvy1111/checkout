@@ -134,16 +134,17 @@ class ListingDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def test_func(self):
         return self.get_object().seller == self.request.user
 
+    # bug: Handle ProtectedError gracefully
     def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        success_url = self.get_success_url()
         try:
-            return super().delete(request, *args, **kwargs)
+            self.object.delete()
+            messages.success(self.request, f"The listing '{self.object.title}' has been successfully deleted.")
+            return redirect(success_url)
         except models.ProtectedError:
-            messages.error(request, 'This listing cannot be deleted as it has existing orders.')
-            return redirect('accounts:dashboard')
-
-    def form_valid(self, form):
-        messages.success(self.request, f"The listing '{self.object.title}' has been successfully deleted.")
-        return super().form_valid(form)
+            messages.error(request, f"Cannot delete '{self.object.title}' as it has existing orders.")
+            return redirect('listings:listing_detail', pk=self.object.pk)
 
 
 @login_required
@@ -163,7 +164,7 @@ def toggle_save_listing(request, pk):
 def filter_listings(request):
     # refactor: Use the custom manager method
     filter_queryset = Listing.objects.all().select_related('seller').with_avg_rating()
-    filter = ListingFilter(request.GET, queryset=filter_queryset)
+    filter = ListingFilter(self.request.GET, queryset=filter_queryset)
     saved_listing_ids = []
     if request.user.is_authenticated:
         saved_listing_ids = SavedItem.objects.filter(user=request.user).values_list('listing__id', flat=True)
