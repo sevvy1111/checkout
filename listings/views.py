@@ -225,6 +225,15 @@ def view_cart(request):
 
 
 @login_required
+def remove_from_cart(request, pk):
+    cart_item = get_object_or_404(CartItem, pk=pk, cart__user=request.user)
+    listing_title = cart_item.listing.title
+    cart_item.delete()
+    messages.info(request, f"'{listing_title}' was removed from your cart.")
+    return redirect('listings:view_cart')
+
+
+@login_required
 def checkout(request):
     cart = get_object_or_404(Cart, user=request.user)
     cart_items = cart.items.all()
