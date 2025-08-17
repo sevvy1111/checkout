@@ -20,7 +20,7 @@ from .filters import ListingFilter
 
 # bug: Import the correct messaging model name
 from messaging.models import Conversation, Message
-
+from notifications.models import Notification
 
 class ListingListView(ListView):
     model = Listing
@@ -325,6 +325,12 @@ def checkout(request):
                     checkout_instance.save()
                     checkout_ids.append(checkout_instance.id)
 
+                    Notification.objects.create(
+                        recipient=listing.seller,
+                        message=f"You have a new order for '{listing.title}'.",
+                        notification_type='new_order',
+                        link=reverse('accounts:seller_orders')
+                    )
                     # Atomically update stock using F() expression
                     listing.stock = F('stock') - item.quantity
                     if listing.stock == 0:

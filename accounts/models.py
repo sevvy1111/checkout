@@ -35,17 +35,3 @@ class Profile(models.Model):
         return self.user.listings.aggregate(avg_rating=models.Avg('reviews__rating'))['avg_rating']
 
 
-# The Notification model remains the same
-class Notification(models.Model):
-    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_notifications')
-    message = models.CharField(max_length=255)
-    link = models.URLField()
-    is_read = models.BooleanField(default=False)
-    timestamp = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-timestamp']
-
-    def __str__(self):
-        return self.message

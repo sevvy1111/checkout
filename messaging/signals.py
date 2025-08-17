@@ -3,11 +3,9 @@ import json
 import platform
 from django.dispatch import Signal, receiver
 from django.db.models.signals import post_save
-from django.urls import reverse
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-from accounts.models import Notification
-from messaging.models import Message
+from notifications.models import Notification
 from listings.models import Review
 
 # The chat message broadcast is now handled directly in the view to pass temp_id
