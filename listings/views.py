@@ -1,6 +1,7 @@
 # listings/views.py
 # refactor: Use the custom manager and atomic transactions for better performance and data integrity
 import random
+import decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
@@ -247,7 +248,7 @@ def checkout(request):
     )['total_price']
 
     # feature: Generate a random shipping fee between 100 and 500 for testing
-    shipping_fee = round(random.uniform(100, 500), 2)
+    shipping_fee = decimal.Decimal(str(round(random.uniform(100, 500), 2)))
     grand_total = (total_price or 0) + shipping_fee
 
     if request.method == 'POST':
