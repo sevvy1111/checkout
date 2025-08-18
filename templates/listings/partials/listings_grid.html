@@ -34,7 +34,7 @@
             </div>
             <div class="listing-card-footer">
                 <div class="listing-card-seller">
-                    <img src="{{ listing.seller.profile.display_avatar_url }}" class="profile-avatar-main" alt="{{ listing.seller.username }}'s avatar">
+                    <img src="{{ listing.seller.profile.display_avatar_url }}" class="profile-avatar" alt="{{ listing.seller.username }}'s avatar">
                     <a href="{% url 'accounts:public_profile' username=listing.seller.username %}" class="listing-card-seller-name">{{ listing.seller.username }}</a>
                 </div>
                 {% if listing.average_rating %}
