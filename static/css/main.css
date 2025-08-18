@@ -1,3 +1,4 @@
+/* Core Styles for a Modern E-commerce Look */
 body {
     background-color: #f3f3f3; /* Light gray background */
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -135,13 +136,14 @@ body {
 }
 
 .profile-avatar, .avatar-lg {
-<<<<<<< HEAD
     width: 50px;
     height: 50px;
-=======
-    width: 30px;
-    height: 30px;
->>>>>>> 5bdca35c02da22c1b87d28a3f1eaa28e3da8b232
+    object-fit: cover;
+    border-radius: 50%;
+}
+.profile-avatar-main {
+    width: 150px;
+    height: 150px;
     object-fit: cover;
     border-radius: 50%;
 }

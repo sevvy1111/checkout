@@ -1,5 +1,7 @@
 # listings/context_processors.py
 from .models import CartItem
+from .filters import ListingFilter
+from .models import Listing
 
 def cart_item_count(request):
     if request.user.is_authenticated:

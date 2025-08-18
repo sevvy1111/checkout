@@ -9,7 +9,7 @@
         <div class="row gx-lg-5">
             <div class="col-lg-4 mb-4 mb-lg-0">
                 <div class="profile-info-card">
-                    <img src="{{ request.user.profile.display_avatar_url }}" class="profile-avatar" alt="User Avatar">
+                    <img src="{{ request.user.profile.display_avatar_url }}" class="profile-avatar-main" alt="User Avatar">
                     <h2 class="profile-name">{{ request.user.username }}</h2>
                     {% if request.user.profile.phone %}
                     <p class="text-muted">

@@ -19,7 +19,25 @@ class InboxView(LoginRequiredMixin, ListView):
     context_object_name = 'conversations'
 
     def get_queryset(self):
-        return Conversation.objects.filter(participants=self.request.user).order_by('-last_message_time')
+        # Prefetch related participants and messages to avoid N+1 queries
+        return Conversation.objects.filter(
+            participants=self.request.user
+        ).prefetch_related(
+            'participants', 'messages'
+        ).order_by('-last_message_time')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Attach the "other user" to each conversation for easy access in the template
+        conversations_with_user = []
+        for conversation in context['conversations']:
+            other_user = conversation.get_other_user(self.request.user)
+            # To prevent issues if a conversation somehow has only one participant
+            if other_user:
+                conversation.other_user = other_user
+                conversations_with_user.append(conversation)
+        context['conversations'] = conversations_with_user
+        return context
 
 
 class ConversationDetailView(LoginRequiredMixin, DetailView):

@@ -3,8 +3,8 @@
 {% for listing in filter.qs %}
 <div class="col">
     <div class="listing-card">
-        <a href="{{ listing.get_absolute_url }}">
-            <div class="listing-card-image-container">
+        <div class="listing-card-image-container">
+            <a href="{{ listing.get_absolute_url }}">
                 {% if listing.images.first %}
                 <img src="{{ listing.images.first.image.url }}" class="listing-card-image" alt="{{ listing.title }}">
                 {% else %}
@@ -12,19 +12,19 @@
                     <span>No Image</span>
                 </div>
                 {% endif %}
-                <div class="listing-card-save">
-                    {% if user.is_authenticated %}
-                    <button class="btn btn-sm save-button" data-listing-id="{{ listing.pk }}" aria-label="Save Listing">
-                        {% if listing.pk in saved_listing_ids %}
-                        <i class="fas fa-heart text-danger"></i>
-                        {% else %}
-                        <i class="far fa-heart"></i>
-                        {% endif %}
-                    </button>
+            </a>
+            <div class="listing-card-save">
+                {% if user.is_authenticated %}
+                <button class="btn btn-sm save-button" data-listing-id="{{ listing.pk }}" aria-label="Save Listing">
+                    {% if listing.pk in saved_listing_ids %}
+                    <i class="fas fa-heart text-danger"></i>
+                    {% else %}
+                    <i class="far fa-heart"></i>
                     {% endif %}
-                </div>
+                </button>
+                {% endif %}
             </div>
-        </a>
+        </div>
         <div class="listing-card-body">
             <div class="listing-card-header">
                 <a href="{{ listing.get_absolute_url }}" class="text-decoration-none text-dark">
