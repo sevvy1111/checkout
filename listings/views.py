@@ -261,7 +261,7 @@ def add_to_cart(request, pk):
 
 @login_required
 def view_cart(request):
-    cart = get_object_or_404(Cart, user=request.user)
+    cart, created = Cart.objects.get_or_create(user=request.user)
     # chore: Prefetch related items for better performance
     cart_items = cart.items.all().select_related('listing')
     total_price = cart_items.aggregate(
