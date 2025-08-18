@@ -6,8 +6,8 @@
 <div class="container my-5 profile-container">
     <div class="row gx-lg-5">
         <div class="col-lg-4 mb-4 mb-lg-0">
-            <div class="profile-info-card">
-                <img src="{% if user.profile.avatar and user.profile.avatar.url %}{{ user.profile.avatar.url }}{% else %}{% static 'images/default_avatar.svg' %}{% endif %}" class="profile-avatar mb-3" alt="{{ user.username }}'s profile image">
+            <div class="profile-info-card text-center">
+                <img src="{% if user.profile.avatar and user.profile.avatar.url %}{{ user.profile.avatar.url }}{% else %}{% static 'images/default_avatar.svg' %}{% endif %}" class="avatar-lg mb-3" alt="{{ user.username }}'s profile image">
                 <h4 class="profile-name">{{ user.username }}</h4>
                 <p class="text-muted small mb-1">
                     {% if user.profile.phone %}{{ user.profile.phone }}{% else %}No phone provided{% endif %}

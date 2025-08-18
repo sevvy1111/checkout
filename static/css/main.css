@@ -126,3 +126,18 @@ body {
 .text-muted-custom {
     color: rgba(255, 255, 255, 0.7);
 }
+/* Profile and Avatar Styles */
+.profile-info-card {
+    text-align: center;
+    padding: 2rem;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.profile-avatar, .avatar-lg {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 50%;
+}
