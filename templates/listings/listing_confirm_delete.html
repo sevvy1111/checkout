@@ -12,7 +12,7 @@
                     <h2 class="card-title text-center text-danger mb-4">Confirm Deletion</h2>
                     <p class="text-center">Are you sure you want to delete the listing "<strong>{{ object.title }}</strong>"?</p>
                     <p class="text-center text-muted">This action is permanent and cannot be undone.</p>
-                    <form method="post">
+                    <form method="post" action="{% url 'listings:listing_delete' pk=object.pk %}">
                         {% csrf_token %}
                         <div class="d-flex justify-content-center gap-3 mt-4">
                             <button type="submit" class="btn btn-danger btn-lg">Yes, Delete</button>
