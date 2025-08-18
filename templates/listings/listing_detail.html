@@ -51,10 +51,10 @@
                 <p class="listing-detail-location">{{ listing.city }} • Posted {{ listing.created|timesince }} ago</p>
                 <hr>
                 <div class="listing-detail-seller-info">
-                     {% if listing.seller.profile.avatar and listing.seller.profile.avatar.url %}
-                    <img src="{{ listing.seller.profile.avatar.url }}" class="profile-avatar" alt="{{ listing.seller.username }}'s avatar">
+                    {% if listing.seller.profile.avatar and listing.seller.profile.avatar.url %}
+                    <img src="{{ listing.seller.profile.avatar.url }}" class="listing-detail-avatar profile-avatar" alt="{{ listing.seller.username }}'s avatar">
                     {% else %}
-                    <img src="{% static 'images/default_avatar.svg' %}" class="profile-avatar" alt="Default avatar">
+                    <img src="{% static 'images/default_avatar.svg' %}" class="listing-detail-avatar profile-avatar" alt="Default avatar">
                     {% endif %}
                     <div class="ms-3">
                         <a href="{% url 'accounts:public_profile' username=listing.seller.username %}" class="listing-detail-seller-name">
@@ -118,9 +118,9 @@
             {% for review in reviews %}
             <div class="listing-detail-review-card d-flex mb-3">
                  {% if review.author.profile.avatar and review.author.profile.avatar.url %}
-                <img src="{{ review.author.profile.avatar.url }}" class="listing-detail-review-avatar" alt="{{ review.author.username }}'s avatar">
+                <img src="{{ review.author.profile.avatar.url }}" class="listing-detail-review-avatar profile-avatar" alt="{{ review.author.username }}'s avatar">
                 {% else %}
-                <img src="{% static 'images/default_avatar.svg' %}" class="listing-detail-review-avatar" alt="Default avatar">
+                <img src="{% static 'images/default_avatar.svg' %}" class="listing-detail-review-avatar profile-avatar" alt="Default avatar">
                 {% endif %}
                 <div class="ms-3">
                     <strong class="text-dark">{{ review.author.username }}</strong>
