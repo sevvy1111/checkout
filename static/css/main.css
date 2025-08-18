@@ -135,8 +135,8 @@ body {
 }
 
 .profile-avatar, .avatar-lg {
-    width: 150px;
-    height: 150px;
+    width: 30px;
+    height: 30px;
     object-fit: cover;
     border-radius: 50%;
 }
