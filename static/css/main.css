@@ -144,8 +144,15 @@ body {
 }
 
 .profile-avatar, .avatar-lg {
-    width: 50px;
-    height: 50px;
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.listing-card-avatar {
+    width: 150px;
+    height: 150px;
     object-fit: cover;
     border-radius: 50%;
 }
