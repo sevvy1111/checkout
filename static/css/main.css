@@ -1,4 +1,3 @@
-/* Core Styles for a Modern E-commerce Look */
 body {
     background-color: #f3f3f3; /* Light gray background */
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -79,16 +78,8 @@ body {
 }
 
 .listing-card {
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.listing-card .card-img {
-    height: 200px;
-    object-fit: cover;
-    border-top-left-radius: 8px;
-    border-bottom-left-radius: 8px;
+    border: none;
+    transition: box-shadow .2s ease-in-out;
 }
 
 .listing-card:hover {
@@ -146,13 +137,6 @@ body {
 .profile-avatar, .avatar-lg {
     width: 150px;
     height: 150px;
-    object-fit: cover;
-    border-radius: 50%;
-}
-
-.listing-card-avatar {
-    width: 30px;
-    height: 30px;
     object-fit: cover;
     border-radius: 50%;
 }
