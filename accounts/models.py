@@ -2,7 +2,7 @@
 
 from django.db import models
 from django.contrib.auth.models import User
-from django.conf import settings
+from django.templatetags.static import static
 from cloudinary.models import CloudinaryField
 
 class Profile(models.Model):
@@ -24,11 +24,13 @@ class Profile(models.Model):
 
     @property
     def display_avatar_url(self):
-        # Corrected logic to handle the fallback gracefully
-        if self.avatar and hasattr(self.avatar, 'url') and self.avatar.url:
-            return self.avatar.url
-        return settings.STATIC_URL + 'images/default_avatar.svg'
-
+        """Return Cloudinary avatar if available, otherwise fallback to static default."""
+        try:
+            if self.avatar and hasattr(self.avatar, 'url') and self.avatar.url:
+                return self.avatar.url
+        except Exception:
+            pass
+        return static('images/default_avatar.svg')
     # New property to get the seller's average rating directly from the profile
     @property
     def seller_average_rating(self):
