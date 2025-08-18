@@ -15,7 +15,7 @@
                     <form method="post">
                         {% csrf_token %}
                         <div class="d-flex justify-content-center gap-3 mt-4">
-                             <a href="{% url 'listings:listing_delete' pk=listing.pk %}" class="btn btn-danger btn-lg">Yes, Delete</a>
+                            <button type="submit" class="btn btn-danger btn-lg">Yes, Delete</button>
                             <a href="{{ object.get_absolute_url }}" class="btn btn-secondary btn-lg">Cancel</a>
                         </div>
                     </form>
