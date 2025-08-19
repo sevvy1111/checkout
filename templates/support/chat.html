@@ -1,118 +1,78 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
 
-{% block title %}Customer Support{% endblock %}
-
-{% block extra_head %}
-<style>
-    #chat-log {
-        height: 60vh;
-        overflow-y: auto;
-        border: 1px solid #ccc;
-        padding: 10px;
-        border-radius: 5px;
-    }
-    .message {
-        margin-bottom: 10px;
-    }
-    .message.user {
-        text-align: right;
-    }
-    .message .bubble {
-        display: inline-block;
-        padding: 8px 12px;
-        border-radius: 15px;
-        max-width: 70%;
-    }
-    .message.user .bubble {
-        background-color: #0d6efd;
-        color: white;
-    }
-    .message.bot .bubble {
-        background-color: #e9ecef;
-        color: black;
-    }
-    .message.bot .bubble a {
-        color: #0d6efd;
-        text-decoration: underline;
-    }
-</style>
-{% endblock %}
+{% block title %}Support Chat{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-    <h2 class="mb-4">Support Chat</h2>
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <div id="chat-log">
-                {% for msg in ticket.messages.all %}
-                <div class="message {{ msg.sender }}">
-                    <div class="bubble">{{ msg.message|linebreaksbr|safe }}</div>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h1 class="mb-4 text-center">Support Chat</h1>
+            <div id="chat-box" class="card p-3 mb-3" style="max-height: 400px; overflow-y: auto;">
                 </div>
-                {% endfor %}
-            </div>
-        </div>
-        <div class="card-footer">
-            <form id="chat-form" class="d-flex">
-                <input id="chat-message-input" type="text" class="form-control" autocomplete="off" placeholder="Type your message...">
-                <button id="chat-message-submit" class="btn btn-primary ms-2">Send</button>
+            <form id="chat-form">
+                <div class="input-group">
+                    <input type="text" id="message-input" class="form-control" placeholder="Type your message...">
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-primary">Send</button>
+                    </div>
+                </div>
             </form>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
 <script>
-    const ticketId = {{ ticket.id }};
-    const chatLog = document.querySelector('#chat-log');
-    const chatMessageInput = document.querySelector('#chat-message-input');
-    const chatForm = document.querySelector('#chat-form');
+    const chatBox = document.getElementById('chat-box');
+    const messageInput = document.getElementById('message-input');
+    const chatForm = document.getElementById('chat-form');
 
-    const chatSocket = new WebSocket(
-        'ws://' + window.location.host + '/ws/support/'
+    // Dynamically determine the WebSocket protocol
+    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const supportSocket = new WebSocket(
+        protocol + window.location.host + '/ws/support/'
     );
 
-    chatSocket.onmessage = function(e) {
+    supportSocket.onopen = function(e) {
+        console.log("WebSocket connection established!");
+    };
+
+    supportSocket.onmessage = function(e) {
         const data = JSON.parse(e.data);
         const messageDiv = document.createElement('div');
-        messageDiv.classList.add('message', data.sender);
+        messageDiv.classList.add('p-2', 'my-2', 'rounded');
 
-        const bubbleDiv = document.createElement('div');
-        bubbleDiv.classList.add('bubble');
-        bubbleDiv.innerHTML = data.message.replace(/\n/g, '<br>');
-
-        messageDiv.appendChild(bubbleDiv);
-        chatLog.appendChild(messageDiv);
-        chatLog.scrollTop = chatLog.scrollHeight;
+        if (data.sender === 'bot') {
+            messageDiv.classList.add('bg-light');
+            messageDiv.style.textAlign = 'left';
+        } else {
+            messageDiv.classList.add('bg-primary', 'text-white');
+            messageDiv.style.textAlign = 'right';
+        }
+        messageDiv.innerText = `${data.sender}: ${data.message}`;
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
     };
 
-    chatSocket.onclose = function(e) {
-        console.error('Chat socket closed unexpectedly');
+    supportSocket.onclose = function(e) {
+        console.error('WebSocket closed unexpectedly');
+        console.error('Close event:', e);
     };
 
-    chatMessageInput.focus();
-    chatForm.onsubmit = function(e) {
+    supportSocket.onerror = function(e) {
+        console.error('WebSocket error occurred!');
+        console.error('Error event:', e);
+    };
+
+    chatForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        const message = chatMessageInput.value;
-        if (message.trim() === '') return;
-
-        chatSocket.send(JSON.stringify({
-            'message': message
-        }));
-        chatMessageInput.value = '';
-    };
-
-    chatLog.addEventListener('click', function(e) {
-        if (e.target && e.target.classList.contains('chat-suggestion')) {
-            e.preventDefault();
-            const message = e.target.dataset.message;
-
-            chatSocket.send(JSON.stringify({
+        const message = messageInput.value.trim();
+        if (message) {
+            supportSocket.send(JSON.stringify({
                 'message': message
             }));
+            messageInput.value = '';
         }
     });
-
-    chatLog.scrollTop = chatLog.scrollHeight;
 </script>
 {% endblock %}
