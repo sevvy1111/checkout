@@ -41,7 +41,7 @@
                     <h2 class="card-subtitle mb-2 text-primary fw-bold">₱{{ listing.price|philippine_currency }}</h2>
                     <p class="card-text" style="white-space: pre-wrap;">{{ listing.description }}</p>
                     <small class="text-muted">
-                        Listed by: <a href="{% url 'accounts:public_profile' username=listing.seller.username %}">{{ listing.seller.username }}</a> on {{ listing.created|date:"F j, Y" }}
+                        Listed by: <a href="{% url 'accounts:public_profile' username=listing.seller.username %}">{{ listing.seller.get_full_name }}</a> on {{ listing.created|date:"F j, Y" }}
                     </small>
                 </div>
             </div>
@@ -68,7 +68,7 @@
                         <div class="d-flex mb-3 border-bottom pb-3">
                             <img src="{{ review.author.profile.display_avatar_url }}" alt="{{ review.author.username }}" class="rounded-circle me-3" width="50" height="50">
                             <div>
-                                <strong>{{ review.author.username }}</strong> - <small class="text-muted">{{ review.created_at|timesince }} ago</small>
+                                <strong>{{ review.author.get_full_name }}</strong> - <small class="text-muted">{{ review.created_at|timesince }} ago</small>
                                 <div class="text-warning my-1">
                                     {% for i in "12345" %}
                                         <i class="fa{% if forloop.counter <= review.rating %}s{% else %}r{% endif %} fa-star"></i>
@@ -90,7 +90,7 @@
                     <h5 class="card-title border-bottom pb-2 mb-3">Seller Info</h5>
                     <div class="text-center mb-3">
                         <img src="{{ listing.seller.profile.display_avatar_url }}" alt="{{ listing.seller.username }}'s avatar" class="rounded-circle mb-2" style="width: 80px; height: 80px; object-fit: cover;">
-                        <h6>{{ listing.seller.username }}</h6>
+                        <h6>{{ listing.seller.get_full_name }}</h6>
                         <small class="text-muted">Member since {{ listing.seller.date_joined|date:"Y" }}</small>
                         {% if seller_average_rating %}
                         <div class="text-warning mt-1">

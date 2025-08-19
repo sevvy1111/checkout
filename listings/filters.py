@@ -123,4 +123,4 @@ class ListingFilter(django_filters.FilterSet):
 
     class Meta:
         model = Listing
-        fields = ['q', 'category', 'city']
+        fields = ['category', 'city']
