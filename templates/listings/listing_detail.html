@@ -1,142 +1,169 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
 {% load listings_tags %}
-{% load static %}
 
 {% block title %}{{ listing.title }}{% endblock %}
 
 {% block content %}
-<div class="container my-5 listing-detail-container">
-    <div class="row gx-lg-5">
-        <div class="col-lg-7 mb-4 mb-lg-0">
-            <div id="listingCarousel" class="carousel slide listing-detail-carousel" data-bs-ride="carousel">
-                <div class="carousel-inner">
-                    {% for img in listing.images.all %}
-                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                        {% if img.image and img.image.url %}
-                        <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ listing.title }}">
-                        {% else %}
-                        <div class="listing-detail-placeholder">
-                            <span>Image Not Available</span>
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4 shadow-sm">
+                {% if listing.images.all %}
+                <div id="listingCarousel" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner">
+                        {% for image in listing.images.all %}
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                            <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ image.caption|default:listing.title }}">
                         </div>
-                        {% endif %}
-                    </div>
-                    {% empty %}
-                    <div class="carousel-item active">
-                        <div class="listing-detail-placeholder">
-                            <span>No Image</span>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% if listing.images.all|length > 1 %}
-                <button class="carousel-control-prev" type="button" data-bs-target="#listingCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Previous</span>
-                </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#listingCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Next</span>
-                </button>
-                {% endif %}
-            </div>
-        </div>
-
-        <div class="col-lg-5">
-            <div class="listing-detail-info-card">
-                <div class="listing-detail-info-header">
-                    <h1 class="listing-detail-title">{{ listing.title }}</h1>
-                    <span class="listing-detail-price">₱{{ listing.price|philippine_currency }}</span>
-                </div>
-                <p class="listing-detail-location">{{ listing.city }} • Posted {{ listing.created|timesince }} ago</p>
-                <hr>
-                <div class="listing-detail-seller-info">
-                    {% if listing.seller.profile.avatar and listing.seller.profile.avatar.url %}
-                    <img src="{{ listing.seller.profile.avatar.url }}" class="listing-detail-avatar profile-avatar" alt="{{ listing.seller.username }}'s avatar">
-                    {% else %}
-                    <img src="{% static 'images/default_avatar.svg' %}" class="listing-detail-avatar profile-avatar" alt="Default avatar">
-                    {% endif %}
-                    <div class="ms-3">
-                        <a href="{% url 'accounts:public_profile' username=listing.seller.username %}" class="listing-detail-seller-name">
-                            {{ listing.seller.username }}
-                        </a>
-                        {% if seller_average_rating %}
-                        <div class="listing-detail-rating">
-                            <i class="fas fa-star"></i> {{ seller_average_rating|floatformat:1 }}
-                        </div>
-                        {% else %}
-                        <span class="text-muted small">No reviews yet</span>
-                        {% endif %}
-                    </div>
-                </div>
-                <hr>
-                <div class="listing-detail-action-buttons">
-                    {% if user.is_authenticated and user != listing.seller %}
-                    <a href="{% url 'messaging:send_message' recipient_id=listing.seller.id %}?listing_id={{ listing.id }}" class="btn btn-primary btn-lg w-100 mb-2">Message Seller</a>
-                    {% if listing.stock > 0 %}
-                    <p class="text-success fw-bold mb-2 text-center">In Stock: {{ listing.stock }}</p>
-                    <a href="{% url 'listings:add_to_cart' pk=listing.pk %}" class="btn btn-success btn-lg w-100">Add to Cart</a>
-                    {% else %}
-                    <p class="text-danger fw-bold mb-2 text-center">Out of Stock</p>
-                    <button class="btn btn-danger btn-lg w-100" disabled>Out of Stock</button>
-                    {% endif %}
-                    {% elif user == listing.seller %}
-                    <a href="{% url 'listings:listing_update' pk=listing.pk %}" class="btn btn-secondary btn-lg w-100 mb-2">Edit Listing</a>
-                    <a href="{% url 'listings:listing_delete' pk=listing.pk %}" class="btn btn-danger btn-lg w-100 mb-2">Delete Listing</a>
-                    {% if listing.status == 'available' %}
-                    <form action="{% url 'listings:mark_as_sold' pk=listing.pk %}" method="post" class="d-inline w-100">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-success btn-lg w-100">Mark as Sold</button>
-                    </form>
-                    {% endif %}
-                    {% else %}
-                    <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-primary btn-lg w-100">Login to Interact</a>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="row mt-5">
-        <div class="col-12">
-            <h3 class="mb-3">Description</h3>
-            <div class="bg-white p-4 rounded shadow-sm mb-5">
-                <p class="card-text">{{ listing.description|linebreaks }}</p>
-            </div>
-
-            <h3 class="mb-3">Reviews</h3>
-            {% if user.is_authenticated and user != listing.seller and not has_reviewed %}
-            <div class="listing-detail-review-card mb-4">
-                <h5 class="card-title mb-3">Leave a Review</h5>
-                <form method="post">
-                    {% csrf_token %}
-                    {{ review_form|crispy }}
-                    <button type="submit" class="btn btn-primary mt-2">Submit Review</button>
-                </form>
-            </div>
-            {% endif %}
-
-            {% for review in reviews %}
-            <div class="listing-detail-review-card d-flex mb-3">
-                 {% if review.author.profile.avatar and review.author.profile.avatar.url %}
-                <img src="{{ review.author.profile.avatar.url }}" class="listing-detail-review-avatar profile-avatar" alt="{{ review.author.username }}'s avatar">
-                {% else %}
-                <img src="{% static 'images/default_avatar.svg' %}" class="listing-detail-review-avatar profile-avatar" alt="Default avatar">
-                {% endif %}
-                <div class="ms-3">
-                    <strong class="text-dark">{{ review.author.username }}</strong>
-                    <div class="listing-detail-review-rating">
-                        {% for i in "12345"|make_list %}
-                        <i class="{% if forloop.counter <= review.rating %}fas{% else %}far{% endif %} fa-star"></i>
                         {% endfor %}
                     </div>
-                    <p class="text-muted small mb-1">{{ review.created_at|date:"F j, Y" }}</p>
-                    <p class="mb-0">{{ review.comment }}</p>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#listingCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#listingCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                </div>
+                {% else %}
+                <img src="https://via.placeholder.com/800x600?text=No+Image+Available" class="card-img-top" alt="No Image Available">
+                {% endif %}
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h1 class="card-title">{{ listing.title }}</h1>
+                        {% if user.is_authenticated and user != listing.seller %}
+                            <button class="btn btn-link save-button p-0" data-url="{% url 'listings_api:toggle_save_listing' pk=listing.pk %}">
+                                <i class="{% if is_saved %}fas fa-heart text-danger{% else %}far fa-heart{% endif %} fa-2x"></i>
+                            </button>
+                        {% endif %}
+                    </div>
+                    <h2 class="card-subtitle mb-2 text-primary fw-bold">₱{{ listing.price|philippine_currency }}</h2>
+                    <p class="card-text" style="white-space: pre-wrap;">{{ listing.description }}</p>
+                    <small class="text-muted">
+                        Listed by: <a href="{% url 'accounts:public_profile' username=listing.seller.username %}">{{ listing.seller.username }}</a> on {{ listing.created|date:"F j, Y" }}
+                    </small>
                 </div>
             </div>
-            {% empty %}
-            <p>No reviews for this listing yet.</p>
-            {% endfor %}
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Reviews ({{ reviews.count }})</h5>
+                    <div class="mb-4">
+                        {% if user.is_authenticated and not has_reviewed and user != listing.seller %}
+                            <h6 class="mb-3">Leave a Review</h6>
+                            <form method="post">
+                                {% csrf_token %}
+                                {{ review_form.as_p }}
+                                <button type="submit" class="btn btn-primary">Submit Review</button>
+                            </form>
+                        {% elif has_reviewed %}
+                            <div class="alert alert-info" role="alert">
+                                You have already reviewed this listing.
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    {% for review in reviews %}
+                        <div class="d-flex mb-3 border-bottom pb-3">
+                            <img src="{{ review.author.profile.display_avatar_url }}" alt="{{ review.author.username }}" class="rounded-circle me-3" width="50" height="50">
+                            <div>
+                                <strong>{{ review.author.username }}</strong> - <small class="text-muted">{{ review.created_at|timesince }} ago</small>
+                                <div class="text-warning my-1">
+                                    {% for i in "12345" %}
+                                        <i class="fa{% if forloop.counter <= review.rating %}s{% else %}r{% endif %} fa-star"></i>
+                                    {% endfor %}
+                                </div>
+                                <p class="mb-0">{{ review.comment }}</p>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted">No reviews yet. Be the first to leave one!</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4 position-sticky" style="top: 80px;">
+                <div class="card-body">
+                    <h5 class="card-title border-bottom pb-2 mb-3">Seller Info</h5>
+                    <div class="text-center mb-3">
+                        <img src="{{ listing.seller.profile.display_avatar_url }}" alt="{{ listing.seller.username }}'s avatar" class="rounded-circle mb-2" style="width: 80px; height: 80px; object-fit: cover;">
+                        <h6>{{ listing.seller.username }}</h6>
+                        <small class="text-muted">Member since {{ listing.seller.date_joined|date:"Y" }}</small>
+                        {% if seller_average_rating %}
+                        <div class="text-warning mt-1">
+                            <i class="fas fa-star"></i>
+                            <span class="ms-1">{{ seller_average_rating|floatformat:1 }} average rating</span>
+                        </div>
+                        {% else %}
+                        <p class="text-muted mt-1">No seller reviews yet.</p>
+                        {% endif %}
+                    </div>
+                     {% if user.is_authenticated and user != listing.seller %}
+                        <a href="{% url 'messaging:send_message' recipient_username=listing.seller.username %}" class="btn btn-info w-100">Message Seller</a>
+                     {% endif %}
+                </div>
+                <div class="card-footer bg-transparent border-top-0">
+                    {% if user.is_authenticated %}
+                        {% if user == listing.seller %}
+                            <a href="{% url 'listings:listing_update' pk=listing.pk %}" class="btn btn-secondary w-100 mb-2">Edit Listing</a>
+                            <a href="{% url 'listings:listing_delete' pk=listing.pk %}" class="btn btn-danger w-100">Delete Listing</a>
+                        {% else %}
+                            {% if listing.status == 'available' and listing.stock > 0 %}
+                                <p class="text-success fw-bold mb-2 text-center">In Stock: {{ listing.stock }}</p>
+                                <a href="{% url 'listings:add_to_cart' pk=listing.pk %}" class="btn btn-success btn-lg w-100">Add to Cart</a>
+                            {% else %}
+                                <p class="text-danger fw-bold mb-2 text-center">Out of Stock</p>
+                                <button class="btn btn-secondary btn-lg w-100" disabled>Out of Stock</button>
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                        <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-primary btn-lg w-100">Login to Purchase</a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const saveButton = document.querySelector('.save-button');
+    if (saveButton) {
+        saveButton.addEventListener('click', function(event) {
+            event.preventDefault();
+            const url = this.dataset.url; // Use data-url for dynamic URL
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken, // Defined in base.html
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const icon = this.querySelector('i');
+                if (data.is_saved) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas', 'text-danger');
+                } else {
+                    icon.classList.remove('fas', 'text-danger');
+                    icon.classList.add('far');
+                }
+            })
+            .catch(error => console.error('Error toggling save state:', error));
+        });
+    }
+});
+</script>
 {% endblock %}

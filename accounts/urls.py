@@ -1,29 +1,17 @@
 # accounts/urls.py
-# chore: Remove redundant URL entry for update_order_status
 from django.urls import path
-from django.contrib.auth import views as auth_views
 from . import views
 
 app_name = 'accounts'
 
 urlpatterns = [
-    path('register/', views.register_view, name='register'),
-    path('profile/', views.profile_view, name='profile'),
-    path('profile/<str:username>/', views.public_profile_view, name='public_profile'),
-    path('dashboard/', views.dashboard_view, name='dashboard'),
-    path('saved/', views.saved_listings_view, name='saved_listings'),
-    path('order-history/', views.order_history_view, name='order_history'),
-    path('seller-orders/', views.seller_orders_view, name='seller_orders'),
-    path('seller-orders/update-status/<int:pk>/', views.update_order_status_view, name='update_order_status'),
-
-    # New URL for the buyer's receipt
-    path('order-history/<int:pk>/receipt/', views.receipt_view, name='receipt'),
-
-    # New URLs for phone verification
-    path('verify-phone/', views.verify_phone_view, name='verify_phone'),
-    path('send-verification-code/', views.send_verification_code_view, name='send_verification_code'),
-
-    # Auth URLs
-    path('login/', auth_views.LoginView.as_view(template_name='accounts/login.html'), name='login'),
-    # ... (rest of the auth URLs) ...
+    path('register/', views.register, name='register'),
+    path('profile/', views.profile, name='profile'),
+    path('dashboard/', views.dashboard, name='dashboard'),
+    path('wishlist/', views.saved_listings, name='saved_listings'),
+    path('purchases/', views.order_history, name='order_history'),
+    path('sales/', views.seller_orders, name='seller_orders'),
+    path('user/<str:username>/', views.PublicProfileDetailView.as_view(), name='public_profile'),
+    # FIX: Added the URL pattern for updating order status
+    path('order/<int:order_id>/update-status/', views.update_order_status, name='update_order_status'),
 ]

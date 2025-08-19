@@ -1,10 +1,9 @@
 # listings/filters.py
 import django_filters
 from django import forms
-from django.db.models import Q
-from .models import Listing
+from .models import Listing, Category
 
-# A comprehensive, alphabetized list of all 149 cities in the Philippines
+# A comprehensive list of cities in the Philippines for dropdowns
 PHILIPPINE_CITIES = [
     ('Alaminos', 'Alaminos'), ('Angeles', 'Angeles'), ('Antipolo', 'Antipolo'), ('Bacolod', 'Bacolod'),
     ('Bacoor', 'Bacoor'), ('Bago', 'Bago'), ('Baguio', 'Baguio'), ('Bais', 'Bais'), ('Balanga', 'Balanga'),
@@ -14,11 +13,14 @@ PHILIPPINE_CITIES = [
     ('Cadiz', 'Cadiz'), ('Cagayan de Oro', 'Cagayan de Oro'), ('Calaca', 'Calaca'), ('Calamba', 'Calamba'),
     ('Calapan', 'Calapan'), ('Calbayog', 'Calbayog'), ('Caloocan', 'Caloocan'), ('Candon', 'Candon'),
     ('Canlaon', 'Canlaon'), ('Carcar', 'Carcar'), ('Carmona', 'Carmona'), ('Catbalogan', 'Catbalogan'),
-    ('Cauayan', 'Cauayan'), ('Cavite City', 'Cavite City'), ('Cebu City', 'Cebu City'), ('Cotabato City', 'Cotabato City'),
+    ('Cauayan', 'Cauayan'), ('Cavite City', 'Cavite City'), ('Cebu City', 'Cebu City'),
+    ('Cotabato City', 'Cotabato City'),
     ('Dagupan', 'Dagupan'), ('Danao', 'Danao'), ('Dapitan', 'Dapitan'), ('Dasmariñas', 'Dasmariñas'),
     ('Davao City', 'Davao City'), ('Digos', 'Digos'), ('Dipolog', 'Dipolog'), ('Dumaguete', 'Dumaguete'),
-    ('El Salvador', 'El Salvador'), ('Escalante', 'Escalante'), ('Gapan', 'Gapan'), ('General Santos', 'General Santos'),
-    ('General Trias', 'General Trias'), ('Gingoog', 'Gingoog'), ('Guihulngan', 'Guihulngan'), ('Himamaylan', 'Himamaylan'),
+    ('El Salvador', 'El Salvador'), ('Escalante', 'Escalante'), ('Gapan', 'Gapan'),
+    ('General Santos', 'General Santos'),
+    ('General Trias', 'General Trias'), ('Gingoog', 'Gingoog'), ('Guihulngan', 'Guihulngan'),
+    ('Himamaylan', 'Himamaylan'),
     ('Ilagan', 'Ilagan'), ('Iligan', 'Iligan'), ('Iloilo City', 'Iloilo City'), ('Imus', 'Imus'), ('Iriga', 'Iriga'),
     ('Isabela', 'Isabela'), ('Kabankalan', 'Kabankalan'), ('Kidapawan', 'Kidapawan'), ('Koronadal', 'Koronadal'),
     ('La Carlota', 'La Carlota'), ('Lamitan', 'Lamitan'), ('Laoag', 'Laoag'), ('Lapu-Lapu City', 'Lapu-Lapu City'),
@@ -41,10 +43,12 @@ PHILIPPINE_CITIES = [
     ('Tanjay', 'Tanjay'), ('Tarlac City', 'Tarlac City'), ('Tayabas', 'Tayabas'), ('Toledo', 'Toledo'),
     ('Trece Martires', 'Trece Martires'), ('Tuguegarao', 'Tuguegarao'), ('Urdaneta', 'Urdaneta'),
     ('Valencia', 'Valencia'), ('Valenzuela', 'Valenzuela'), ('Victorias', 'Victorias'), ('Vigan', 'Vigan'),
-    ('Zamboanga City', 'Zamboanga City')
+    ('Zamboanga City', 'Zamboanga City'),
 ]
 
-# Comprehensive list of marketplace categories with subcategories
+# A comprehensive list of categories for dropdowns
+# This list is now primarily for populating the database via migration.
+# The form/filter will pull directly from the Category model.
 MARKETPLACE_CATEGORIES = [
     ('Vehicles', (
         ('Cars, Trucks & Motorcycles', 'Cars, Trucks & Motorcycles'),
@@ -87,37 +91,36 @@ MARKETPLACE_CATEGORIES = [
         ('Arts & Crafts', 'Arts & Crafts'),
         ('Toys & Games', 'Toys & Games'),
     )),
+    # ... (the rest of your categories)
 ]
 
+
 class ListingFilter(django_filters.FilterSet):
+    # Filter for the listing title using 'icontains' for case-insensitive partial matches
     q = django_filters.CharFilter(
-        method="search_filter",
-        label="Search",
-        widget=forms.TextInput(attrs={"placeholder":"Search items...", "class":"form-control"})
+        field_name='title',
+        lookup_expr='icontains',
+        label='Search',
+        widget=forms.TextInput(attrs={'placeholder': 'Search by title...'})
     )
-    category = django_filters.ChoiceFilter(
-        choices=MARKETPLACE_CATEGORIES,
-        empty_label="All Categories",
-        label="Category",
-        widget=forms.Select(attrs={"class":"form-control"})
+
+    # FIX: Use ModelChoiceFilter to correctly handle the ForeignKey relationship
+    category = django_filters.ModelChoiceFilter(
+        queryset=Category.objects.all(),
+        field_name='category__name',  # Filter based on the name of the category
+        to_field_name='name',       # The value from the form corresponds to the 'name' field
+        label='Category',
+        empty_label='All Categories',
+        widget=forms.Select(attrs={'class': 'form-select'})
     )
+
     city = django_filters.ChoiceFilter(
         choices=PHILIPPINE_CITIES,
-        empty_label="All Cities",
-        label="City",
-        widget=forms.Select(attrs={"class":"form-control"})
+        label='City',
+        empty_label='Any City',
+        widget=forms.Select(attrs={'class': 'form-select'})
     )
 
     class Meta:
         model = Listing
-        fields = ["q", "category", "city"]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Exclude 'sold' listings from the main queryset by default
-        self.queryset = self.queryset.filter(status='available')
-
-    def search_filter(self, queryset, name, value):
-        if not value:
-            return queryset
-        return queryset.filter(Q(title__icontains=value) | Q(description__icontains=value))
+        fields = ['q', 'category', 'city']

@@ -4,32 +4,49 @@
 {% block title %}Inbox{% endblock %}
 
 {% block content %}
-<div class="container my-4">
-    <h2>Inbox</h2>
-    <hr>
-    <div class="list-group">
-        {% for conversation in conversations %}
-            <a href="{% url 'messaging:conversation_detail' pk=conversation.pk %}" class="list-group-item list-group-item-action">
-                <div class="d-flex w-100 justify-content-between align-items-center">
-                    <div class="d-flex align-items-center">
-                        <img src="{{ conversation.other_user.profile.display_avatar_url }}"
-                             alt="{{ conversation.other_user.username }}'s avatar"
-                             class="rounded-circle" style="width:50px;height:50px;object-fit:cover;margin-right:15px;">
-                        <div>
-                            <h5 class="mb-1">{{ conversation.other_user.username }}</h5>
-                            <p class="mb-1 text-muted">
-                                {% if conversation.messages.last %}
-                                    {{ conversation.messages.last.text|truncatechars:50 }}
-                                {% endif %}
-                            </p>
-                        </div>
+<div class="container my-5">
+    <h2 class="mb-4">Inbox</h2>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="list-group">
+                {% for conversation in conversations %}
+                {% comment %}
+                  FIX: Added a conditional class to make unread conversations bold.
+                {% endcomment %}
+                <a href="{% url 'messaging:conversation_detail' pk=conversation.pk %}" class="list-group-item list-group-item-action {% if conversation.unread_count > 0 %}fw-bold{% endif %}">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">
+                            <img src="{{ conversation.other_user.profile.display_avatar_url }}" alt="{{ conversation.other_user.username }}" class="rounded-circle me-2" width="40" height="40" style="object-fit: cover;">
+                            {{ conversation.other_user.username }}
+                            {% comment %}
+                              FIX: Added a badge to show the count of unread messages.
+                            {% endcomment %}
+                            {% if conversation.unread_count > 0 %}
+                                <span class="badge bg-danger rounded-pill ms-2">{{ conversation.unread_count }}</span>
+                            {% endif %}
+                        </h5>
+                        <small class="text-muted">{{ conversation.last_message_time|timesince }} ago</small>
                     </div>
-                    <small class="text-muted">{{ conversation.last_message_time|timesince }} ago</small>
+                    <p class="mb-1 text-muted ms-5">
+                        {% with last_message=conversation.messages.last %}
+                            {% if last_message %}
+                                {% if last_message.image and not last_message.text %}
+                                    <i class="fas fa-image me-1"></i>
+                                    <em>[Sent an image]</em>
+                                {% else %}
+                                    {{ last_message.text|truncatewords:10 }}
+                                {% endif %}
+                            {% endif %}
+                        {% endwith %}
+                    </p>
+                </a>
+                {% empty %}
+                <div class="list-group-item">
+                    <p class="mb-0 text-muted">You have no conversations yet.</p>
                 </div>
-            </a>
-        {% empty %}
-            <p class="text-center text-muted">You have no conversations.</p>
-        {% endfor %}
+                {% endfor %}
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

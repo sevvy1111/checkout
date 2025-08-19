@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}All Notifications{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h2 class="mb-4">All Notifications</h2>
+    <div class="list-group">
+        {% for notification in notifications %}
+            <a href="{% url 'notifications:read_and_redirect' notification.id %}" class="list-group-item list-group-item-action {% if not notification.is_read %}list-group-item-primary fw-bold{% endif %}">
+                <div class="d-flex w-100 justify-content-between">
+                    <p class="mb-1">{{ notification.message }}</p>
+                    <small>{{ notification.created_at|timesince }} ago</small>
+                </div>
+            </a>
+        {% empty %}
+            <div class="list-group-item">
+                <p class="mb-0 text-muted">You have no notifications.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

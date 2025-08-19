@@ -6,100 +6,78 @@
 
 {% block content %}
 <div class="container my-5">
-    <h2 class="mb-4">Checkout</h2>
+    <h2 class="mb-4 text-center">Secure Checkout</h2>
     <div class="row gx-lg-5">
-        <div class="col-lg-8">
-            <div class="checkout-form-container">
-                <form method="post" id="checkout-form">
-                    {% csrf_token %}
+        <div class="col-lg-7">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post" id="checkout-form">
+                        {% csrf_token %}
 
-                    {% comment %} Bug Fix: Add an if statement to show the django messages if there is any {% endcomment %}
-                    {% if messages %}
-                    <div class="messages">
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-
-                    {% comment %} Bug Fix: Display non-field errors {% endcomment %}
-                    {% if form.non_field_errors %}
-                        <div class="alert alert-danger" role="alert">
-                            {{ form.non_field_errors }}
-                        </div>
-                    {% endif %}
-
-                    {% comment %} Bug Fix: Display all field errors {% endcomment %}
-                    {% for field in form %}
-                        {% if field.errors %}
+                        {% if form.non_field_errors %}
                             <div class="alert alert-danger" role="alert">
-                                {% for error in field.errors %}
-                                    {{ field.label }}: {{ error }}
+                                {% for error in form.non_field_errors %}
+                                    <p class="mb-0">{{ error }}</p>
                                 {% endfor %}
                             </div>
                         {% endif %}
-                    {% endfor %}
 
-                    <div class="checkout-form-section mb-4">
-                        <h5 class="mb-3">Shipping Information</h5>
-                        {{ form.full_name|as_crispy_field }}
-                        {{ form.shipping_address|as_crispy_field }}
-                        <div class="row">
-                            <div class="col-md-6">{{ form.shipping_city|as_crispy_field }}</div>
-                            <div class="col-md-6">{{ form.shipping_postal_code|as_crispy_field }}</div>
+                        <div class="checkout-form-section mb-4">
+                            <h5 class="mb-3 border-bottom pb-2">1. Shipping Information</h5>
+                            {{ form.full_name|as_crispy_field }}
+                            {{ form.shipping_address|as_crispy_field }}
+                            <div class="row">
+                                <div class="col-md-6">{{ form.shipping_city|as_crispy_field }}</div>
+                                <div class="col-md-6">{{ form.shipping_postal_code|as_crispy_field }}</div>
+                            </div>
+                            {{ form.gift_note|as_crispy_field }}
                         </div>
-                        {{ form.gift_note|as_crispy_field }}
-                    </div>
 
-                    <div class="checkout-form-section mb-4">
-                        <h5 class="mb-3">Payment Details</h5>
-                        <div class="form-group mb-0">
-                            <p class="text-muted small">We accept the following payment methods securely.</p>
+                        <div class="checkout-form-section mb-4">
+                            <h5 class="mb-3 border-bottom pb-2">2. Payment Method</h5>
+                            {{ form.payment_method|as_crispy_field }}
                         </div>
-                        <div class="form-check my-3">
-                            <input class="form-check-input" type="radio" name="payment_method" id="cod" value="COD" checked>
-                            <label class="form-check-label" for="cod">
-                                Cash on Delivery (COD)
-                            </label>
-                        </div>
-                    </div>
 
-                    <button type="submit" class="btn btn-primary btn-lg w-100 mt-3">Confirm Order</button>
-                </form>
+                        <button type="submit" class="btn btn-primary btn-lg w-100 mt-3">
+                            <i class="fas fa-lock me-2"></i>Confirm Order & Pay
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
 
-        <div class="col-lg-4">
-            <div class="order-summary-card sticky-top" style="margin-top: 20px;">
-                <h5 class="mb-3">Order Summary</h5>
-                <ul class="list-unstyled">
-                    {% for item in cart_items %}
-                    <li class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="d-flex align-items-center">
-                            <img src="{{ item.listing.images.first.image.url }}" class="order-summary-image me-2" alt="{{ item.listing.title }}">
-                            <span class="text-muted">{{ item.quantity }}x</span>
-                            <span class="ms-2 fw-bold">{{ item.listing.title }}</span>
-                        </span>
-                        <span>₱{{ item.total_price|philippine_currency }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
-                <hr>
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Subtotal</span>
-                    <span>₱{{ total_price|philippine_currency }}</span>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Shipping</span>
-                    <span>₱{{ shipping_fee|philippine_currency }}</span>
-                </div>
-                <hr>
-                <div class="d-flex justify-content-between fw-bold">
-                    <span>Total</span>
-                    <span class="text-primary">₱{{ grand_total|philippine_currency }}</span>
+        <div class="col-lg-5 mt-4 mt-lg-0">
+            <div class="card shadow-sm sticky-top" style="top: 80px;">
+                <div class="card-body p-4">
+                    <h5 class="mb-3 border-bottom pb-2">Order Summary</h5>
+                    <ul class="list-unstyled">
+                        {% for item in cart_items %}
+                        <li class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex align-items-center">
+                                <img src="{{ item.listing.images.first.image.url }}" class="rounded me-3" width="60" height="60" style="object-fit: cover;" alt="{{ item.listing.title }}">
+                                <div>
+                                    <span class="fw-bold">{{ item.listing.title }}</span><br>
+                                    <small class="text-muted">{{ item.quantity }} x ₱{{ item.listing.price|philippine_currency }}</small>
+                                </div>
+                            </div>
+                            <span class="fw-bold">₱{{ item.total_price|philippine_currency }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal</span>
+                        <span>₱{{ subtotal|philippine_currency }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Shipping</span>
+                        <span>₱{{ shipping_fee|philippine_currency }}</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between fw-bold fs-5">
+                        <span>Grand Total</span>
+                        <span class="text-primary">₱{{ grand_total|philippine_currency }}</span>
+                    </div>
                 </div>
             </div>
         </div>

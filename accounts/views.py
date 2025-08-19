@@ -1,163 +1,123 @@
 # accounts/views.py
-
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login
-from django.contrib.auth.models import User
 from django.contrib import messages
-from django.db.models import Count
-import random
+from django.contrib.auth.decorators import login_required
+from django.views.generic import DetailView
+from django.contrib.auth import get_user_model
+from django.urls import reverse
+from .forms import UserRegisterForm, UserUpdateForm, ProfileUpdateForm
+from listings.forms import OrderStatusForm  # Import the new form
+from listings.models import Listing, SavedItem, Order, OrderItem
+from notifications.models import Notification  # Import Notification model
 
-from listings.models import Listing, Review, SavedItem, Checkout
-from listings.forms import OrderStatusForm
-from .forms import RegistrationForm, ProfileForm, PhoneVerificationForm
+User = get_user_model()
+
+
+def register(request):
+    if request.method == 'POST':
+        form = UserRegisterForm(request.POST)
+        if form.is_valid():
+            form.save()
+            username = form.cleaned_data.get('username')
+            messages.success(request, f'Account created for {username}! You can now log in.')
+            return redirect('login')
+    else:
+        form = UserRegisterForm()
+    return render(request, 'accounts/register.html', {'form': form})
 
 
 @login_required
-def profile_view(request):
-    profile = request.user.profile
+def profile(request):
     if request.method == 'POST':
-        p_form = ProfileForm(request.POST, request.FILES, instance=profile)
-        if p_form.is_valid():
+        u_form = UserUpdateForm(request.POST, instance=request.user)
+        p_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
+        if u_form.is_valid() and p_form.is_valid():
+            u_form.save()
             p_form.save()
-            messages.success(request, 'Your profile has been updated successfully!')
+            messages.success(request, 'Your account has been updated!')
             return redirect('accounts:profile')
     else:
-        p_form = ProfileForm(instance=profile)
-
-    user_listings = Listing.objects.filter(seller=request.user).order_by('-created')
-    reviews = Review.objects.filter(listing__seller=request.user).order_by('-created_at')
+        u_form = UserUpdateForm(instance=request.user)
+        p_form = ProfileUpdateForm(instance=request.user.profile)
 
     context = {
-        'p_form': p_form,
-        'user_listings': user_listings,
-        'reviews': reviews
+        'u_form': u_form,
+        'p_form': p_form
     }
     return render(request, 'accounts/profile.html', context)
 
 
-# ... (The rest of your views remain unchanged) ...
-def register_view(request):
-    if request.method == 'POST':
-        form = RegistrationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect('listings:listing_list')
-    else:
-        form = RegistrationForm()
-    return render(request, 'accounts/register.html', {'form': form})
-
-
-def public_profile_view(request, username):
-    user = get_object_or_404(User, username=username)
-    profile = user.profile
-    user_listings = Listing.objects.filter(seller=user).order_by('-created')
-    reviews = Review.objects.filter(listing__seller=user).order_by('-created_at')
-    context = {
-        'user': user,
-        'profile': profile,
-        'user_listings': user_listings,
-        'reviews': reviews,
-    }
-    return render(request, 'accounts/profile_detail.html', context)
-
-
 @login_required
-def dashboard_view(request):
-    user = request.user
-    listings = Listing.objects.filter(seller=user).annotate(saved_count=Count('saved_by'))
-    reviews = Review.objects.filter(listing__seller=user)
-
-    context = {
-        'listings': listings,
-        'reviews': reviews,
-        'total_listings': listings.count(),
-        'active_listings': listings.filter(status='available').count(),
-        'sold_listings': listings.filter(status='sold').count(),
-    }
+def dashboard(request):
+    user_listings = Listing.objects.filter(seller=request.user).order_by('-created')
+    context = {'listings': user_listings}
     return render(request, 'accounts/dashboard.html', context)
 
 
 @login_required
-def saved_listings_view(request):
-    saved_items = SavedItem.objects.filter(user=request.user).select_related('listing__seller')
-    return render(request, 'accounts/saved_listings.html', {'saved_items': saved_items})
+def saved_listings(request):
+    saved = SavedItem.objects.filter(user=request.user).select_related('listing').order_by('-saved_at')
+    context = {'saved_items': saved}
+    return render(request, 'accounts/saved_listings.html', context)
 
 
 @login_required
-def send_verification_code_view(request):
-    profile = request.user.profile
-    if not profile.phone:
-        messages.error(request, "Please add a phone number to your profile first.")
-        return redirect('accounts:profile')
-    code = str(random.randint(100000, 999999))
-    profile.phone_verification_code = code
-    profile.save()
-    messages.info(request, f"For testing purposes, your verification code is: {code}")
-    return redirect('accounts:verify_phone')
+def order_history(request):
+    orders = Order.objects.filter(user=request.user).prefetch_related('items__listing').order_by('-created_at')
+    return render(request, 'accounts/order_history.html', {'orders': orders})
 
 
 @login_required
-def verify_phone_view(request):
-    profile = request.user.profile
+def seller_orders(request):
+    sales = OrderItem.objects.filter(listing__seller=request.user).select_related('order', 'listing').order_by(
+        '-order__created_at')
+
+    # Create a dictionary of forms, one for each unique order
+    forms = {sale.order.id: OrderStatusForm(instance=sale.order) for sale in sales}
+
+    context = {
+        'sales': sales,
+        'forms': forms
+    }
+    return render(request, 'accounts/seller_orders.html', context)
+
+
+# FIX: Added a new view to handle the status update logic
+@login_required
+def update_order_status(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+
+    # Security check: Ensure at least one item in this order belongs to the current user
+    if not order.items.filter(listing__seller=request.user).exists():
+        messages.error(request, "You do not have permission to modify this order.")
+        return redirect('accounts:seller_orders')
+
     if request.method == 'POST':
-        form = PhoneVerificationForm(request.POST)
-        if form.is_valid():
-            entered_code = form.cleaned_data['code']
-            if entered_code == profile.phone_verification_code:
-                profile.is_phone_verified = True
-                profile.phone_verification_code = None
-                profile.save()
-                messages.success(request, "Your phone number has been verified!")
-                return redirect('accounts:profile')
-            else:
-                messages.error(request, "Invalid verification code. Please try again.")
-    else:
-        form = PhoneVerificationForm()
-    return render(request, 'accounts/verify_phone.html', {'form': form})
-
-
-# New view for Order History
-@login_required
-def order_history_view(request):
-    checkouts = Checkout.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'accounts/order_history.html', {'checkouts': checkouts})
-
-
-# New view for Seller Orders
-@login_required
-def seller_orders_view(request):
-    seller_checkouts = Checkout.objects.filter(listing__seller=request.user).order_by('-created_at')
-    forms = {checkout.id: OrderStatusForm(instance=checkout) for checkout in seller_checkouts}
-    return render(request, 'accounts/seller_orders.html', {'seller_checkouts': seller_checkouts, 'forms': forms})
-
-
-# fix: Removed the duplicate `update_order_status_view` function.
-@login_required
-def update_order_status_view(request, pk):
-    if request.method == 'POST':
-        checkout_item = get_object_or_404(Checkout, pk=pk, listing__seller=request.user)
-        form = OrderStatusForm(request.POST, instance=checkout_item)
+        form = OrderStatusForm(request.POST, instance=order)
         if form.is_valid():
             form.save()
-            messages.success(request,
-                             f"Order for '{checkout_item.listing.title}' has been updated to '{checkout_item.status}'.")
-        else:
-            messages.error(request, "Invalid form submission.")
+            messages.success(request, f"Order #{order.id} status has been updated.")
+
+            # Notify the buyer of the status update
+            Notification.objects.create(
+                recipient=order.user,
+                message=f"The status of your order #{order.id} has been updated to '{order.get_status_display()}'.",
+                notification_type='order_status_update',
+                link=reverse('accounts:order_history')
+            )
+
     return redirect('accounts:seller_orders')
 
 
-@login_required
-def receipt_view(request, pk):
-    receipt = get_object_or_404(Checkout, pk=pk, user=request.user)
+class PublicProfileDetailView(DetailView):
+    model = User
+    template_name = 'accounts/profile_detail.html'
+    context_object_name = 'profile_user'
+    slug_field = 'username'
+    slug_url_kwarg = 'username'
 
-    total_price = receipt.listing.price * receipt.quantity
-    grand_total = total_price + receipt.shipping_fee
-
-    context = {
-        'receipt': receipt,
-        'total_price': total_price,
-        'grand_total': grand_total
-    }
-    return render(request, 'accounts/receipt.html', context)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.get_object()
+        context['user_listings'] = Listing.objects.filter(seller=user, status='available').order_by('-created')
+        return context

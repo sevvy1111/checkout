@@ -3,89 +3,74 @@
 {% load listings_tags %}
 
 {% block content %}
-<div class="row">
-    <aside class="col-lg-2">
-        <div class="filter-sidebar">
-            <h4 class="mb-3">Filters</h4>
-            <form id="filter-form">
-                {{ filter.form|crispy }}
-            </form>
-        </div>
-    </aside>
+<main class="col-lg-12">
+    <h2 class="mb-3">Today's Picks</h2>
+    <form id="filter-form" class="mb-4 p-3 bg-light rounded">
+        {{ filter.form|crispy }}
+    </form>
 
-    <main class="col-lg-10">
-        <h2 class="mb-3">Today's Picks</h2>
-        <div id="listings-container" class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-2">
-            {% include 'listings/partials/listings_grid.html' %}
-        </div>
-    </main>
-</div>
+    <div id="listings-container" class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
+        {% include 'listings/partials/listings_grid.html' %}
+    </div>
+</main>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const filterForm = document.getElementById('filter-form');
-        const listingsContainer = document.getElementById('listings-container');
+document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.getElementById('filter-form');
+    const listingsContainer = document.getElementById('listings-container');
 
-        function updateListings() {
-            const formData = new FormData(filterForm);
-            const params = new URLSearchParams(formData);
+    function updateListings() {
+        const formData = new FormData(filterForm);
+        const params = new URLSearchParams(formData);
+        const url = `{% url 'listings_api:filter_listings' %}?${params.toString()}`;
 
-            fetch(`/api/filter-listings/?${params.toString()}`)
-                .then(response => response.json())
-                .then(data => {
-                    listingsContainer.innerHTML = data.html;
-                })
-                .catch(error => console.error('Error fetching listings:', error));
-        }
+        history.pushState(null, '', `{% url 'listings:listing_list' %}?${params.toString()}`);
 
-        filterForm.addEventListener('change', updateListings);
-        filterForm.addEventListener('keyup', updateListings);
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                listingsContainer.innerHTML = data.html;
+            })
+            .catch(error => console.error('Error fetching listings:', error));
+    }
 
-        listingsContainer.addEventListener('click', function(event) {
-            const saveButton = event.target.closest('.save-button');
-            if (saveButton) {
-                const listingId = saveButton.dataset.listingId;
-                const url = `/listing/${listingId}/save/`;
-                const csrftoken = getCookie('csrftoken');
+    if (filterForm) {
+        filterForm.addEventListener('input', updateListings);
+    }
 
-                fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrftoken,
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    const icon = saveButton.querySelector('i');
-                    if (data.is_saved) {
-                        icon.classList.remove('far');
-                        icon.classList.add('fas', 'text-danger');
-                    } else {
-                        icon.classList.remove('fas', 'text-danger');
-                        icon.classList.add('far');
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            }
-        });
+    // This event listener now works correctly because the button has a 'data-url'
+    listingsContainer.addEventListener('click', function(event) {
+        const saveButton = event.target.closest('.save-button');
+        if (saveButton) {
+            event.preventDefault();
+            const url = saveButton.dataset.url; // This will no longer be 'undefined'
 
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken, // from base.html
+                    'Content-Type': 'application/json'
                 }
-            }
-            return cookieValue;
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok.');
+                return response.json();
+            })
+            .then(data => {
+                const icon = saveButton.querySelector('i');
+                if (data.is_saved) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas', 'text-danger');
+                } else {
+                    icon.classList.remove('fas', 'text-danger');
+                    icon.classList.add('far');
+                }
+            })
+            .catch(error => console.error('Error:', error));
         }
     });
+});
 </script>
 {% endblock %}

@@ -1,53 +1,60 @@
 {% extends "base.html" %}
 {% load listings_tags %}
+{% load static %}
 
-{% block title %}Order Receipt{% endblock %}
+{% block title %}Receipt for Order #{{ order.id }}{% endblock %}
 
 {% block content %}
 <div class="container my-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card p-4 shadow">
-                <div class="card-header text-center bg-primary text-white">
-                    <h4 class="mb-0">Order Receipt</h4>
+    <div class="receipt-header text-center mb-4">
+        <h2>Thank You for Your Order!</h2>
+        <p>Order #{{ order.id }} confirmed on {{ order.created_at|date:"F j, Y" }}</p>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5>Order Details</h5>
                 </div>
                 <div class="card-body">
-                    <div class="mb-4">
-                        <h5 class="card-title">Thank you for your order!</h5>
-                        <p class="text-muted">Your order has been placed successfully. Below is a summary of your purchase.</p>
-                    </div>
-                    
-                    <h6 class="border-bottom pb-2">Order Details</h6>
-                    <ul class="list-group list-group-flush">
-                        {% for item in checkouts %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <ul class="list-unstyled">
+                        {% for item in order_items %}
+                        <li class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-3">
                             <div class="d-flex align-items-center">
-                                <img src="{{ item.listing.images.first.image.url }}" class="order-summary-image me-2" alt="{{ item.listing.title }}">
-                                <span class="text-muted">{{ item.quantity }}x</span>
-                                <span class="ms-2 fw-bold">{{ item.listing.title }}</span>
+                                {% comment %}
+                                  FIX: Added checks to prevent errors if the listing or its images are deleted.
+                                  1. Check if item.listing is not None.
+                                  2. Check if there is a first image.
+                                  3. Show a placeholder if either check fails.
+                                {% endcomment %}
+                                {% if item.listing and item.listing.images.first %}
+                                    <img src="{{ item.listing.images.first.image.url }}" class="rounded me-3" width="80" height="80" style="object-fit: cover;" alt="{{ item.listing.title }}">
+                                {% else %}
+                                    <img src="https://via.placeholder.com/80x80?text=No+Image" class="rounded me-3" alt="No Image Available">
+                                {% endif %}
+
+                                <div>
+                                    <span class="fw-bold">{{ item.listing.title|default:"[Deleted Listing]" }}</span><br>
+                                    <small class="text-muted">{{ item.quantity }} x ₱{{ item.price|philippine_currency }}</small>
+                                </div>
                             </div>
-                            <span>₱{{ item.total_price|philippine_currency }}</span>
+                            <span class="fw-bold">₱{{ item.total_price|philippine_currency }}</span>
                         </li>
                         {% endfor %}
                     </ul>
-                    
-                    <hr class="my-4">
-                    
-                    <div class="d-flex justify-content-between mb-2">
-                        <strong>Subtotal</strong>
-                        <span>₱{{ subtotal|philippine_currency }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <strong>Shipping Fee</strong>
-                        <span>₱{{ shipping_fee|philippine_currency }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between fw-bold fs-5 text-primary">
-                        <span>Grand Total</span>
-                        <span>₱{{ grand_total|philippine_currency }}</span>
+                    <div class="text-end">
+                        <p class="mb-1">Subtotal: <strong>₱{{ subtotal|philippine_currency }}</strong></p>
+                        <p class="mb-1">Shipping Fee: <strong>₱{{ order.shipping_fee|philippine_currency }}</strong></p>
+                        <hr>
+                        <h5 class="mb-0">Grand Total: <strong class="text-primary">₱{{ order.total_price|philippine_currency }}</strong></h5>
                     </div>
                 </div>
-                <div class="card-footer text-center">
-                    <a href="{% url 'accounts:dashboard' %}" class="btn btn-secondary mt-3">Back to Dashboard</a>
+                <div class="card-footer">
+                    <h6>Shipping to:</h6>
+                    <p class="mb-0">{{ order.full_name }}</p>
+                    <p class="mb-0">{{ order.shipping_address }}</p>
+                    <p class="mb-0">{{ order.shipping_city }}, {{ order.shipping_postal_code }}</p>
                 </div>
             </div>
         </div>

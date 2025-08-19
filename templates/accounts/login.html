@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load crispy_forms_tags %}
 
 {% block title %}
@@ -11,7 +11,7 @@
     <div class="card mt-5 shadow-sm">
       <div class="card-body">
         <h2 class="card-title text-center mb-4">Log In</h2>
-        <form method="post" action="{% url 'accounts:login' %}">
+        <form method="post" action="{% url 'login' %}">
           {% csrf_token %}
           {{ form|crispy }}
           <div class="d-grid gap-2">

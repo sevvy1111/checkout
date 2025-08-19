@@ -1,10 +1,9 @@
-# sevvy1111/checkout/checkout-6284e1df24802e516d66595b54136462676a4c2c/messaging/views.py
+# messaging/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.views.generic import ListView, DetailView, CreateView
+from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse_lazy
-from django.db.models import Q
+from django.db.models import Q, Count
 from .models import Conversation, Message
 from .forms import MessageForm
 from django.contrib.auth import get_user_model
@@ -19,20 +18,20 @@ class InboxView(LoginRequiredMixin, ListView):
     context_object_name = 'conversations'
 
     def get_queryset(self):
-        # Prefetch related participants and messages to avoid N+1 queries
+        # Annotate each conversation with the count of unread messages for the current user
         return Conversation.objects.filter(
             participants=self.request.user
+        ).annotate(
+            unread_count=Count('messages', filter=Q(messages__receiver=self.request.user, messages__is_read=False))
         ).prefetch_related(
-            'participants', 'messages'
+            'participants__profile', 'messages'
         ).order_by('-last_message_time')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Attach the "other user" to each conversation for easy access in the template
         conversations_with_user = []
         for conversation in context['conversations']:
             other_user = conversation.get_other_user(self.request.user)
-            # To prevent issues if a conversation somehow has only one participant
             if other_user:
                 conversation.other_user = other_user
                 conversations_with_user.append(conversation)
@@ -49,12 +48,11 @@ class ConversationDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         conversation = self.get_object()
 
-        # Explicitly find the other participant
-        other_user = conversation.participants.exclude(id=self.request.user.id).first()
+        other_user = conversation.get_other_user(self.request.user)
         context['other_user'] = other_user
 
         context['form'] = MessageForm()
-        # Mark messages as read for the current user
+        # Mark messages as read upon opening the conversation
         conversation.messages.filter(receiver=self.request.user, is_read=False).update(is_read=True)
         return context
 
@@ -65,11 +63,8 @@ class ConversationDetailView(LoginRequiredMixin, DetailView):
             message = form.save(commit=False)
             message.conversation = self.object
             message.sender = request.user
-            # Determine the receiver
-            participants = self.object.participants.all()
-            message.receiver = participants.exclude(id=request.user.id).first()
+            message.receiver = self.object.get_other_user(request.user)
             message.save()
-
             return redirect('messaging:conversation_detail', pk=self.object.pk)
         else:
             context = self.get_context_data()
@@ -78,14 +73,18 @@ class ConversationDetailView(LoginRequiredMixin, DetailView):
 
 
 @login_required
-def send_message_view(request, recipient_id):
-    recipient = get_object_or_404(User, id=recipient_id)
+def send_message_view(request, recipient_username):
+    recipient = get_object_or_404(User, username=recipient_username)
     if request.user == recipient:
         messages.error(request, "You cannot send a message to yourself.")
         return redirect('listings:listing_list')
 
-    # Find existing conversation or create a new one
-    conversation = Conversation.objects.filter(participants=request.user).filter(participants=recipient).first()
+    conversation = Conversation.objects.filter(
+        participants=request.user
+    ).filter(
+        participants=recipient
+    ).first()
+
     if not conversation:
         conversation = Conversation.objects.create()
         conversation.participants.add(request.user, recipient)
@@ -98,8 +97,10 @@ def send_message_view(request, recipient_id):
             message.sender = request.user
             message.receiver = recipient
             message.save()
+            messages.success(request, "Your message has been sent.")
             return redirect('messaging:conversation_detail', pk=conversation.pk)
     else:
-        form = MessageForm()
+        return redirect('messaging:conversation_detail', pk=conversation.pk)
 
-    return render(request, 'messaging/send_message.html', {'form': form, 'recipient': recipient})
+    messages.error(request, "There was an error sending your message.")
+    return redirect(request.META.get('HTTP_REFERER', 'listings:listing_list'))

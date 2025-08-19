@@ -1,7 +1,10 @@
-# sevvy1111/checkout/checkout-6284e1df24802e516d66595b54136462676a4c2c/notifications/routing.py
-from django.urls import re_path
-from . import consumers
+# notifications/routing.py
+from django.urls import path
+# In the future, you will import your consumer here like this:
+# from .consumers import NotificationConsumer
 
 websocket_urlpatterns = [
-    re_path(r'ws/notifications/$', consumers.NotificationConsumer.as_asgi()),
+    # This is where you would define your WebSocket URL patterns.
+    # For example:
+    # path('ws/notifications/', NotificationConsumer.as_asgi()),
 ]

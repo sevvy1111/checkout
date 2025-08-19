@@ -1,5 +1,4 @@
 # listings/urls.py
-# chore: Clean up imports
 from django.urls import path
 from . import views
 
@@ -11,22 +10,12 @@ urlpatterns = [
     path('listing/<int:pk>/', views.ListingDetailView.as_view(), name='listing_detail'),
     path('listing/<int:pk>/update/', views.ListingUpdateView.as_view(), name='listing_update'),
     path('listing/<int:pk>/delete/', views.ListingDeleteView.as_view(), name='listing_delete'),
-    path('listing/<int:pk>/save/', views.toggle_save_listing, name='listing_save_toggle'),
-    path('api/filter-listings/', views.filter_listings, name='filter_listings'),
-
-    # New URL for marking a listing as sold
-    path('listing/<int:pk>/mark-sold/', views.mark_listing_as_sold, name='mark_as_sold'),
-
-    # New URLs for the shopping cart and checkout
-    path('listing/<int:pk>/add-to-cart/', views.add_to_cart, name='add_to_cart'),
+    path('listing/<int:pk>/sold/', views.mark_listing_as_sold, name='mark_listing_as_sold'),
+    path('add-to-cart/<int:pk>/', views.add_to_cart, name='add_to_cart'),
+    path('update-cart-item/<int:pk>/', views.update_cart_item, name='update_cart_item'),
+    path('remove-from-cart/<int:pk>/', views.remove_from_cart, name='remove_from_cart'),
     path('cart/', views.view_cart, name='view_cart'),
-    path('cart/remove/<int:pk>/', views.remove_from_cart, name='remove_from_cart'),
-    path('cart/update/<int:pk>/', views.update_cart_item, name='update_cart_item'),
     path('checkout/', views.checkout, name='checkout'),
-
-    # URL for invoice generation
-    path('checkout/<int:pk>/invoice/', views.invoice_view, name='invoice'),
-
-    # New URL for the consolidated order receipt
-    path('receipt/<str:checkout_ids>/', views.view_receipt, name='view_receipt'),
+    path('receipt/<int:pk>/', views.view_receipt, name='view_receipt'),
+    path('seller/order/<int:pk>/', views.seller_order_detail, name='seller_order_detail'),
 ]

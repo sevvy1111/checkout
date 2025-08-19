@@ -81,7 +81,6 @@ body {
 .listing-card {
     border: none;
     transition: box-shadow .2s ease-in-out;
-    width: max-content;
 }
 
 .listing-card:hover {
@@ -147,4 +146,25 @@ body {
     height: 150px;
     object-fit: cover;
     border-radius: 50%;
+}
+
+/* Cart Item Image Styles */
+.cart-item-image {
+    width: 100%; /* Make image responsive within its container */
+    height: 120px; /* Fixed height for consistency */
+    object-fit: cover; /* Crop image to fit, maintaining aspect ratio */
+    border-radius: 8px; /* Rounded corners */
+    background-color: #f0f0f0; /* Placeholder color */
+}
+
+.cart-item-image-placeholder {
+    width: 100%;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f0f0f0;
+    border-radius: 8px;
+    color: #999;
+    font-size: 0.9rem;
 }

@@ -1,49 +1,55 @@
-{% extends 'base.html' %}
-{% load static %}
+{% extends "base.html" %}
 {% load listings_tags %}
 
-{% block title %}My Purchases{% endblock %}
+{% block title %}My Purchase History{% endblock %}
 
 {% block content %}
 <div class="container my-5">
-    <h1 class="mb-4">My Purchases</h1>
-    <div class="row">
-        <div class="col-md-12">
-            {% if checkouts %}
-                <div class="list-group">
-                    {% for checkout in checkouts %}
-                        <div class="list-group-item list-group-item-action">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h5 class="mb-1">{{ checkout.listing.title }}</h5>
-                                <small>{{ checkout.created_at|date:"F j, Y" }}</small>
-                            </div>
-                            <p class="mb-1">Quantity: {{ checkout.quantity }}</p>
-                            <p class="mb-1">
-                                {% if checkout.status == 'pending' %}
-                                <span class="badge bg-secondary">Status: {{ checkout.status|title }}</span>
-                                {% elif checkout.status == 'shipped' %}
-                                <span class="badge bg-primary">Status: {{ checkout.status|title }}</span>
-                                {% elif checkout.status == 'delivered' %}
-                                <span class="badge bg-success">Status: {{ checkout.status|title }}</span>
-                                {% elif checkout.status == 'cancelled' %}
-                                <span class="badge bg-danger">Status: {{ checkout.status|title }}</span>
-                                {% endif %}
-                            </p>
-                            <small class="text-muted">
-                                Shipping to: {{ checkout.full_name }}, {{ checkout.shipping_address }}, {{ checkout.shipping_city }}
-                            </small>
-                            <div class="mt-2">
-                                <a href="{% url 'accounts:receipt' pk=checkout.pk %}" class="btn btn-sm btn-outline-info">View Receipt</a>
+    <h2 class="mb-4">My Purchase History</h2>
+
+    {% if orders %}
+        {% for order in orders %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>Order #{{ order.id }}</strong>
+                    <span class="ms-3 text-muted">Placed on: {{ order.created_at|date:"F j, Y" }}</span>
+                </div>
+                <div>
+                    <span class="badge bg-info text-dark">{{ order.get_status_display }}</span>
+                    <a href="{% url 'listings:view_receipt' pk=order.pk %}" class="btn btn-sm btn-outline-secondary ms-2">View Receipt</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for item in order.items.all %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            {% if item.listing and item.listing.images.first %}
+                                <img src="{{ item.listing.images.first.image.url }}" class="rounded me-3" width="70" height="70" style="object-fit: cover;" alt="{{ item.listing.title }}">
+                            {% else %}
+                                <img src="https://via.placeholder.com/70x70?text=No+Image" class="rounded me-3" alt="No Image Available">
+                            {% endif %}
+                            <div>
+                                <h6 class="my-0">{{ item.listing.title|default:"[Deleted Listing]" }}</h6>
+                                <small class="text-muted">Quantity: {{ item.quantity }}</small>
                             </div>
                         </div>
+                        <span>₱{{ item.total_price|philippine_currency }}</span>
+                    </li>
                     {% endfor %}
-                </div>
-            {% else %}
-                <div class="alert alert-info text-center" role="alert">
-                    You have not made any purchases yet.
-                </div>
-            {% endif %}
+                </ul>
+            </div>
+            <div class="card-footer text-end">
+                <strong>Total: ₱{{ order.total_price|philippine_currency }}</strong>
+            </div>
         </div>
+        {% endfor %}
+    {% else %}
+    <div class="text-center p-5 bg-light rounded">
+        <p class="lead">You have not made any purchases yet.</p>
+        <a href="{% url 'listings:listing_list' %}" class="btn btn-primary">Start Shopping</a>
     </div>
+    {% endif %}
 </div>
 {% endblock %}

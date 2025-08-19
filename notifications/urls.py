@@ -5,7 +5,6 @@ from . import views
 app_name = 'notifications'
 
 urlpatterns = [
-    path('', views.NotificationListView.as_view(), name='all'),
-    path('mark-as-read/<int:notification_id>/', views.mark_as_read, name='mark_as_read'),
-    path('read/<int:notification_id>/', views.redirect_and_mark_as_read, name='read_and_redirect'),
+    path('', views.all_notifications, name='all'),
+    path('read/<int:notification_id>/', views.read_and_redirect, name='read_and_redirect'),
 ]
