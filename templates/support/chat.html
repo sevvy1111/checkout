@@ -1,41 +1,10 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Customer Support{% endblock %}
 
 {% block extra_head %}
-<style>
-    #chat-log {
-        height: 60vh;
-        overflow-y: auto;
-        border: 1px solid #ccc;
-        padding: 10px;
-        border-radius: 5px;
-    }
-    .message {
-        margin-bottom: 10px;
-    }
-    .message.user {
-        text-align: right;
-    }
-    .message .bubble {
-        display: inline-block;
-        padding: 8px 12px;
-        border-radius: 15px;
-        max-width: 70%;
-    }
-    .message.user .bubble {
-        background-color: #0d6efd;
-        color: white;
-    }
-    .message.bot .bubble {
-        background-color: #e9ecef;
-        color: black;
-    }
-    .message.bot .bubble a {
-        color: #0d6efd;
-        text-decoration: underline;
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/chat.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -56,6 +25,9 @@
                 <input id="chat-message-input" type="text" class="form-control" autocomplete="off" placeholder="Type your message...">
                 <button id="chat-message-submit" class="btn btn-primary ms-2">Send</button>
             </form>
+            <div id="connection-status" class="mt-2 text-danger" style="display: none;">
+                Connection lost. Please refresh the page.
+            </div>
         </div>
     </div>
 </div>
@@ -67,9 +39,12 @@
     const chatLog = document.querySelector('#chat-log');
     const chatMessageInput = document.querySelector('#chat-message-input');
     const chatForm = document.querySelector('#chat-form');
+    const chatMessageSubmit = document.querySelector('#chat-message-submit');
+    const connectionStatusDiv = document.querySelector('#connection-status');
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 
     const chatSocket = new WebSocket(
-        'ws://' + window.location.host + '/ws/support/'
+        protocol + '//' + window.location.host + '/ws/support/'
     );
 
     chatSocket.onmessage = function(e) {
@@ -88,13 +63,18 @@
 
     chatSocket.onclose = function(e) {
         console.error('Chat socket closed unexpectedly');
+        chatMessageInput.disabled = true;
+        chatMessageSubmit.disabled = true;
+        connectionStatusDiv.style.display = 'block';
     };
 
     chatMessageInput.focus();
     chatForm.onsubmit = function(e) {
         e.preventDefault();
         const message = chatMessageInput.value;
-        if (message.trim() === '') return;
+        if (message.trim() === '') {
+            return;
+        }
 
         chatSocket.send(JSON.stringify({
             'message': message
