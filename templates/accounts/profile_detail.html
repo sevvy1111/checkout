@@ -14,6 +14,7 @@
                 </p>
                 <p class="profile-bio">{{ profile_user.profile.bio|default:"No bio yet."|linebreaksbr }}</p>
             </div>
+
         </div>
         <div class="col-lg-8">
             <h3>Listings by {{profile_user.get_full_name }}</h3>
@@ -22,20 +23,20 @@
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-2 g-4">
                 {% for listing in user_listings %}
                 <div class="col">
-                    <div class="listing-card">
+                    <div class="card h-100 shadow-sm listing-card">
                         <a href="{{ listing.get_absolute_url }}">
-                            <div class="listing-card-image-container">
+                            <div class="card-img-top">
                                 {% if listing.images.first %}
-                                <img src="{{ listing.images.first.image.url }}" class="listing-card-image" alt="{{ listing.title }}">
+                                <img src="{{ listing.images.first.image.url }}" class="card-img-top" alt="{{ listing.title }}">
                                 {% else %}
-                                <div class="listing-card-placeholder">
+                                <div class="card-img-top">
                                     <span>No Image</span>
                                 </div>
                                 {% endif %}
                             </div>
                         </a>
-                        <div class="listing-card-body">
-                            <div class="listing-card-header">
+                        <div class="card-body">
+                            <div>
                                 <a href="{{ listing.get_absolute_url }}" class="text-decoration-none text-dark">
                                     <h5 class="listing-card-title">{{ listing.title }}</h5>
                                 </a>
