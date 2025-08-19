@@ -2,12 +2,14 @@
 {% load listings_tags %}
 {% load crispy_forms_tags %}
 
-{% block title %}Your Shopping Cart{% endblock %}
+{% block title %}Cart{% endblock %}
 
 {% block content %}
 <div class="container my-5">
-    <h2 class="mb-4">Your Shopping Cart</h2>
 
+    <h2 class="mb-4">Shopping Cart
+        <i class="fas fa-shopping-cart me-1"></i>
+</h2>
     {% if cart_items %}
     <div class="row">
         <div class="col-lg-8">
@@ -57,8 +59,9 @@
     </div>
     {% else %}
     <div class="text-center">
-        <p>Your cart is empty.</p>
-        <a href="{% url 'listings:listing_list' %}" class="btn btn-primary">Continue Shopping</a>
+        <p>Your <i class="fas fa-shopping-cart me-1"></i>
+ is empty.</p>
+        <a href="{% url 'listings:listing_list' %}" class="btn btn-primary">Browse</a>
     </div>
     {% endif %}
 </div>

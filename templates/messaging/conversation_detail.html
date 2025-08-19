@@ -21,7 +21,7 @@
                         {% endif %}
                     {% endif %}
 
-                    <div class="p-3 rounded {% if message.sender == user %}bg-primary text-white{% else %}bg-light{% endif %}">
+                    <div class="p-3 rounded {% if message.sender == user %}bg-warning text-dark{% else %}bg-light{% endif %}">
                         <p class="mb-1">{{ message.text|linebreaksbr }}</p>
                         {% if message.image %}
                             <a href="{{ message.image.url }}" target="_blank">

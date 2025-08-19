@@ -41,7 +41,7 @@
                     <h2 class="card-subtitle mb-2 text-primary fw-bold">₱{{ listing.price|philippine_currency }}</h2>
                     <p class="card-text" style="white-space: pre-wrap;">{{ listing.description }}</p>
                     <small class="text-muted">
-                        Listed by: <a href="{% url 'accounts:public_profile' username=listing.seller.username %}">{{ listing.seller.get_full_name }}</a> on {{ listing.created|date:"F j, Y" }}
+                        Listed by: <a href="{% url 'accounts:public_profile' username=listing.seller.username %}" class="link-dark">{{ listing.seller.get_full_name }}</a> on {{ listing.created|date:"F j, Y" }}
                     </small>
                 </div>
             </div>
@@ -87,7 +87,7 @@
         <div class="col-lg-4">
             <div class="card shadow-sm mb-4 position-sticky" style="top: 80px;">
                 <div class="card-body">
-                    <h5 class="card-title border-bottom pb-2 mb-3">Seller Info</h5>
+                    <h5 class="card-title border-bottom pb-2 mb-3">About Seller</h5>
                     <div class="text-center mb-3">
                         <img src="{{ listing.seller.profile.display_avatar_url }}" alt="{{ listing.seller.username }}'s avatar" class="rounded-circle mb-2" style="width: 80px; height: 80px; object-fit: cover;">
                         <h6>{{ listing.seller.get_full_name }}</h6>
@@ -108,8 +108,8 @@
                 <div class="card-footer bg-transparent border-top-0">
                     {% if user.is_authenticated %}
                         {% if user == listing.seller %}
-                            <a href="{% url 'listings:listing_update' pk=listing.pk %}" class="btn btn-secondary w-100 mb-2">Edit Listing</a>
-                            <a href="{% url 'listings:listing_delete' pk=listing.pk %}" class="btn btn-danger w-100">Delete Listing</a>
+                            <a href="{% url 'listings:listing_update' pk=listing.pk %}" class="btn btn-secondary w-100 mb-2">Edit</a>
+                            <a href="{% url 'listings:listing_delete' pk=listing.pk %}" class="btn btn-danger w-100">Delete</a>
                         {% else %}
                             {% if listing.status == 'available' and listing.stock > 0 %}
                                 <p class="text-success fw-bold mb-2 text-center">In Stock: {{ listing.stock }}</p>
