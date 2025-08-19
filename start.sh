@@ -4,5 +4,5 @@
 # exit on error
 set -o errexit
 
-echo "Starting both Gunicorn and Daphne with Honcho..."
-honcho start
+echo "Starting Daphne..."
+daphne marketplace.asgi:application --bind 0.0.0.0 --port $PORT
