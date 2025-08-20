@@ -89,9 +89,14 @@
                 <a class="nav-link" href="{% url 'listings:listing_create' %}"><i class="fas fa-plus-circle me-1"></i> Create Listing</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link position-relative" href="{% url 'listings:view_cart' %}">
-                  <i class="fas fa-shopping-cart me-1"></i> Cart
-                  {% if cart_item_count > 0 %}<span class="badge bg-dark-yellow rounded-pill position-absolute top-0 start-100 translate-middle">{{ cart_item_count }}</span>{% endif %}
+                <a class="nav-link" href="{% url 'listings:view_cart' %}">
+                  <i class="fas fa-shopping-cart me-1"></i>
+                  Cart
+                  {% if cart_item_count > 0 %}
+                    <span class="badge rounded-pill bg-dark-yellow ms-1">
+                      {{ cart_item_count }}
+                    </span>
+                  {% endif %}
                 </a>
               </li>
               <li class="nav-item">

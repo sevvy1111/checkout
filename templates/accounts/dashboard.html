@@ -40,12 +40,13 @@
                                     <img src="https://via.placeholder.com/60x60?text=No+Img" alt="No Image Available" class="img-fluid rounded">
                                 {% endif %}
                             </td>
-                            <td><a href="{{ listing.get_absolute_url }}">{{ listing.title }}</a></td>
+                            <td><a class="listing-dashboard-title" href="{{ listing.get_absolute_url }}">{{ listing.title }}</a></td>
                             <td>₱{{ listing.price|philippine_currency }}</td>
                             <td><span class="badge bg-{{ listing.status|listing_status_badge }}">{{ listing.get_status_display }}</span></td>
                             <td>{{ listing.stock }}</td>
                             <td>{{ listing.created|date:"M j, Y" }}</td>
                             <td>
+                                <a href="{% url 'listings:listing_delete' pk=listing.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
                                 <a href="{% url 'listings:listing_update' pk=listing.pk %}" class="btn btn-sm btn-outline-secondary">
                                     <i class="fas fa-edit"></i> Edit
                                 </a>

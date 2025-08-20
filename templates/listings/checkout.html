@@ -1,12 +1,15 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
 {% load listings_tags %}
-
+{% load static %}
 {% block title %}Checkout{% endblock %}
 
 {% block content %}
 <div class="container my-5">
-    <h2 class="mb-4 text-center">Secure Checkout</h2>
+    <img src="{% static 'images/logo.png' %}"
+     alt="CheckoutPH Logo"
+     style="display: block; margin: 0 auto; height: 200px;">
+
     <div class="row gx-lg-5">
         <div class="col-lg-7">
             <div class="card shadow-sm">

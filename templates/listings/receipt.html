@@ -35,7 +35,7 @@
                                 {% endif %}
 
                                 <div>
-                                    <span class="fw-bold">{{ item.listing.title|default:"[Deleted Listing]" }}</span><br>
+                                    <span class="fw-bold listing-cart-title">{{ item.listing.title|default:"[Deleted Listing]" }}</span><br>
                                     <small class="text-muted">{{ item.quantity }} x ₱{{ item.price|philippine_currency }}</small>
                                 </div>
                             </div>

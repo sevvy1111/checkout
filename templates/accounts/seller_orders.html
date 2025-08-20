@@ -17,8 +17,15 @@
                     <div class="row align-items-center">
                         <div class="col-md-7">
                             <h5 class="mb-1">
+                            {% if sale.listing and sale.listing.images.first %}
+                                <img src="{{ sale.listing.images.first.image.url }}" class="rounded me-3" width="70" height="70" style="object-fit: cover;" alt="{{ sale.listing.title }}">
+                            {% else %}
+                                <img src="https://via.placeholder.com/70x70?text=No+Image" class="rounded me-3" alt="No Image Available">
+                            {% endif %}
+                            </h5>
+
                                 {% if sale.listing %}
-                                    <a href="{{ sale.listing.get_absolute_url }}">{{ sale.listing.title }}</a>
+                                    <a class="listing-orders-title" href="{{ sale.listing.get_absolute_url }}">{{ sale.listing.title }}</a>
                                 {% else %}
                                     [Deleted Listing]
                                 {% endif %}
@@ -36,9 +43,10 @@
                             <form action="{% url 'accounts:update_order_status' order_id=sale.order.id %}" method="post" class="d-flex align-items-center justify-content-end">
                                 {% csrf_token %}
                                 <div class="me-2" style="min-width: 150px;">
-                                    {{ forms|get_item:sale.order.id }}
+                                    {{ forms|get_item:sale.order.id }}<button type="submit" class="btn btn-sm btn-primary">Update</button>
+                                     <a href="{% url 'listings:view_invoice' pk=sale.order.pk %}" class="btn btn-sm btn-outline-secondary ms-2">View invoice</a>
                                 </div>
-                                <button type="submit" class="btn btn-sm btn-primary">Update</button>
+
                             </form>
                         </div>
                     </div>

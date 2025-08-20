@@ -22,7 +22,7 @@
                     <div class="col-md-9">
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
-                                <h5 class="card-title">{{ item.listing.title }}</h5>
+                                <h5 class="listing-cart-title">{{ item.listing.title }}</h5>
                                 <a href="{% url 'listings:remove_from_cart' pk=item.pk %}" class="btn-close" aria-label="Remove"></a>
                             </div>
                             <p class="card-text fw-bold">₱{{ item.total_price|philippine_currency }}</p>

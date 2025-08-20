@@ -5,13 +5,13 @@
     <div class="card h-100 shadow-sm listing-card">
         <a href="{{ listing.get_absolute_url }}">
             {% if listing.images.first %}
-                <img src="{{ listing.images.first.image.url }}" class="card-img-top" alt="{{ listing.title }}">
+                <img src="{{ listing.images.first.image.url }}" class="card-img-list" alt="{{ listing.title }}">
             {% else %}
                 <img src="https://via.placeholder.com/300x250?text=No+Image" class="card-img-top" alt="No Image Available">
             {% endif %}
         </a>
         <div class="card-body">
-            <h5 class="card-title">{{ listing.title }}</h5>
+            <h5 class="listing-list-title">{{ listing.title }}</h5>
             <p class="card-text fw-bold text-primary">₱{{ listing.price|philippine_currency }}</p>
             {% if listing.average_rating %}
                 <div class="d-flex align-items-center">

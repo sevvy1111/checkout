@@ -35,14 +35,99 @@
     padding: 10px;
 }
 
+.card-title {
+    font-size: 20px;
+    line-height: 1.2;
+    margin-bottom: 5px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;     /* show max 2 lines */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.listing-detail-title {
+    font-size: 20px;
+    line-height: 1.2;
+    margin-bottom: 5px;
+    display: -webkit-box;
+    -webkit-line-clamp: 5;     /* show max 2 lines */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.listing-dashboard-title {
+    color: #212529; /* dark gray / almost black */
+    max-width: 15rem;
+    font-size: 14px;
+    line-height: 1.2;
+    margin-bottom: 5px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;     /* show max 2 lines */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: calc(1.2em * 2);
+}
+.listing-cart-title {
+    color: #212529; /* dark gray / almost black */
+    text-decoration: none; /* removes underline */
+    max-width: 15rem;
+    font-size: 14px;
+    line-height: 1.2;
+    margin-bottom: 5px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;     /* show max 2 lines */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: calc(1.2em * 2);
+}
+.listing-history-title {
+    color: #212529; /* dark gray / almost black */
+    text-decoration: none; /* removes underline */
+    max-width: 40rem;
+    font-size: 14px;
+    line-height: 1.2;
+    margin-bottom: 5px;
+    display: -webkit-box;
+    -webkit-line-clamp: 5;     /* show max 2 lines */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: calc(1.2em * 2);
+}
+.listing-orders-title {
+    color: #212529; /* dark gray / almost black */
+    text-decoration: none; /* removes underline */
+    max-width: 40rem;
+    font-size: 15px;
+    font-weight: bold;
+    line-height: 1.2;
+    margin-bottom: 5px;
+    display: -webkit-box;
+    -webkit-line-clamp: 5; /* show max 2 lines */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: calc(1.2em * 2);
+}
+
+.listing-list-title {
+    font-size: 20px;
+    line-height: 1.2;
+    margin-bottom: 5px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;     /* show max 2 lines */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: calc(1.2em * 2);
+}
+
 .listing-card-title {
     font-size: 14px;
     line-height: 1.2;
     margin-bottom: 5px;
-    height: 34px; /* Two lines */
+    display: -webkit-box;
+    -webkit-line-clamp: 10;     /* show max 2 lines */
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
 }
+
+
 
 .listing-card-price {
     font-size: 16px;

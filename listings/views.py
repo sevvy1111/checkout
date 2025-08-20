@@ -375,3 +375,20 @@ def search_suggestions(request):
                 'image_url': first_image.image.url if first_image else 'https://via.placeholder.com/40x40?text=No+Img'
             })
     return JsonResponse({'suggestions': data})
+@login_required
+def view_invoice(request, pk):
+    order = get_object_or_404(Order, pk=pk)
+
+    is_buyer = order.user == request.user
+    is_seller = order.items.filter(listing__seller=request.user).exists()
+
+    if not (is_buyer or is_seller):
+        return HttpResponseForbidden("You are not allowed to view this invoice.")
+
+    order_items = order.items.select_related('listing').prefetch_related('listing__images').all()
+    context = {
+        'order': order,
+        'order_items': order_items,
+        'subtotal': order.total_price - order.shipping_fee,
+    }
+    return render(request, 'listings/invoice.html', context)

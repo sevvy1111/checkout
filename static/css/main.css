@@ -95,8 +95,15 @@ body {
 .listing-card .card-img-top {
     height: 200px;
     object-fit: cover;
-    border-radius: 8px 8px 0 0;
+    border-radius: 10px 10px 0 0;
 }
+.card-img-list {
+    height: 200px;
+    object-fit: cover;
+    border-top-left-radius: 2.25rem;
+    border-top-right-radius: 2.25rem;
+}
+
 
 .listing-card .card-body {
     padding: 1rem;
@@ -167,4 +174,18 @@ body {
     border-radius: 8px;
     color: #999;
     font-size: 0.9rem;
+}
+/* Reuse this for any icon+badge in the navbar */
+.navbar .icon-badge {
+  position: relative;
+  display: inline-block;
+  line-height: 1; /* keeps the badge from drifting with line-height */
+}
+
+.navbar .icon-badge > .badge {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  transform: translate(-50%, -50%); /* center on the top-right corner of the icon */
+  pointer-events: none; /* clicks go to the link, not the badge */
 }

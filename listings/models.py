@@ -157,6 +157,9 @@ class OrderItem(models.Model):
     def total_price(self):
         return self.quantity * self.price
 
+    def get_total_price(self):
+        return self.listing.price * self.quantity if self.listing else 0
+
     def __str__(self):
         if self.listing:
             return f"{self.quantity} x {self.listing.title}"
