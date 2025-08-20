@@ -10,90 +10,26 @@
   <link rel="shortcut icon" href="{% static 'images/favicon.png' %}" type="image/png">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
   <link rel="stylesheet" href="{% static 'css/main.css' %}">
-  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-
-  <style>
-    body { background-color: #f8f9fa; }
-
-    .notification-item.unread {
-      font-weight: bold;
-      background-color: #f0f8ff;
-        width: 240;
-    }
-.notification-dropdown {
-  position: relative;
-}
-
-.notification-dropdown .dropdown-menu {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 8px;
-    width: 250px/* Optional: Add some space below the icon */
-}
-     }
-    .search-suggestions-container {
-        position: relative;
-    }
-    .search-suggestions-list {
-        position: unset;
-        top: 100%;
-        left: 0;
-        right: 0;
-        z-index: 1050;
-        border: 1px solid #dee2e6;
-        border-top: none;
-        border-radius: 0 0 .25rem .25rem;
-        max-height: 300px;
-        overflow-y: scroll;
-    }
-    .suggestion-item-content {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    .suggestion-item-content img {
-        width: 40px;
-        height: 40px;
-        object-fit: cover;
-    }
-
-    .bg-dark-yellow { background-color: #DAA520 !important; color: #fff !important; }
-
-    /* Mobile-friendly dropdown full width */
-    @media (max-width: 576px) {
-      .dropdown-menu {
-        position: static !important;
-        float: none;
-        width: 100%;
-        margin-top: 0.5rem;
-        border-radius: 0.25rem;
-      }
-
-      .dropdown-item { padding-left: 1rem; padding-right: 1rem; }
-      .search-suggestions-container { width: 100%; }
-    }
-  </style>
 
   {% block extra_head %}{% endblock %}
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark border-bottom" style="z-index: 1030; background-color: #CC5500;">
+<nav class="navbar navbar-expand-lg navbar-dark border-bottom" style="z-index: 1030;">
   <div class="container-fluid">
     <a class="navbar-brand" href="{% url 'listings:listing_list' %}">
       <img src="{% static 'images/logo.png' %}" alt="CheckoutPH Logo" style="height: 80px;">
     </a>
 
-    {% if request.resolver_match.url_name not in 'login,register,logout,password_reset,password_reset_done,password_reset_confirm,password_reset_complete' %}
-    <div class="w-50 search-suggestions-container">
+    {% if request.resolver_match.url_name not in 'login' and request.resolver_match.url_name not in 'register' %}
+    <div class="flex-grow-1 mx-lg-3 search-suggestions-container">
       <form id="navbar-search-form" class="d-flex" action="{% url 'listings:listing_list' %}" method="get">
         <input class="form-control me-2" id="navbar-search-input" type="search" name="q" placeholder="Search products" aria-label="Search" value="{{ request.GET.q }}" autocomplete="off">
         <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
@@ -112,11 +48,11 @@
           <li class="nav-item">
             <a class="nav-link" href="{% url 'listings:listing_create' %}"><i class="fas fa-plus-circle me-1"></i> Create Listing</a>
           </li>
-          <li class="nav-item"">
+          <li class="nav-item">
             <a class="nav-link icon-badge" href="{% url 'listings:view_cart' %}">
               <i class="fas fa-shopping-cart me-1"></i> Cart
               {% if cart_item_count > 0 %}
-                <span class="badge rounded-pill bg-dark-yellow">{{ cart_item_count }}</span>
+                <span class="badge rounded-pill">{{ cart_item_count }}</span>
               {% endif %}
             </a>
           </li>
@@ -124,7 +60,7 @@
             <a class="nav-link icon-badge" href="{% url 'messaging:inbox' %}">
               <i class="fas fa-inbox me-1"></i> Inbox
               {% if unread_message_count > 0 %}
-                <span class="badge bg-dark-yellow rounded-pill">{{ unread_message_count }}</span>
+                <span class="badge rounded-pill">{{ unread_message_count }}</span>
               {% endif %}
             </a>
           </li>
@@ -133,7 +69,7 @@
             <a class="nav-link icon-badge" href="#" id="notificationDropdown" role="button"
                data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
               <i class="fas fa-bell"></i>
-              <span class="badge rounded-pill bg-dark-yellow" id="notification-badge">{{ unread_notification_count }}</span>
+              <span class="badge rounded-pill" id="notification-badge">{{ unread_notification_count }}</span>
             </a>
             <ul class="dropdown-menu notification-dropdown-menu" aria-labelledby="notificationDropdown" id="notification-list">
               {% if recent_notifications %}
@@ -151,15 +87,18 @@
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
                data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
-              <i class="fas fa-user-circle me-1"></i> {{ user.get_full_name }}
+              <i class="fas fa-user-circle me-1"></i> {{ user.get_full_name|default:user.username }}
             </a>
             <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
               <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">My Profile</a></li>
               <li><a class="dropdown-item" href="{% url 'accounts:dashboard' %}">Dashboard</a></li>
-              <li><a class="dropdown-item" href="{% url 'accounts:seller_orders' %}">Sales</a></li>
-              <li><a class="dropdown-item" href="{% url 'accounts:order_history' %}">Purchases</a></li>
-              <li><a class="dropdown-item" href="{% url 'accounts:saved_listings' %}">Wishlist</a></li>
               <li><a class="dropdown-item" href="{% url 'support:chat' %}">Customer Support</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                  <button class="dropdown-item d-flex align-items-center" id="theme-toggle-btn" type="button">
+                      <i class="fas fa-sun me-2" id="theme-toggle-icon"></i> Toggle Theme
+                  </button>
+              </li>
               <li><hr class="dropdown-divider"></li>
               <li>
                 <form method="post" action="{% url 'logout' %}" class="d-inline">
@@ -178,8 +117,7 @@
   </div>
 </nav>
 
-
-<main class="container my-4">
+<main class="{% block main_container_classes %}container my-4{% endblock %}">
   {% if messages %}
     {% for message in messages %}
       <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
@@ -193,6 +131,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+  // CSRF Token setup
   function getCookie(name) {
       let cookieValue = null;
       if (document.cookie && document.cookie !== '') {
@@ -209,7 +148,40 @@
   }
   const csrftoken = getCookie('csrftoken');
 
+  // Main DOMContentLoaded event listener
   document.addEventListener('DOMContentLoaded', function() {
+    // --- THEME TOGGLE LOGIC ---
+    const themeToggleButton = document.getElementById('theme-toggle-btn');
+    const themeToggleIcon = document.getElementById('theme-toggle-icon');
+    const body = document.body;
+    const localStorageKey = 'theme';
+
+    const applyTheme = (theme) => {
+        body.setAttribute('data-theme', theme);
+        localStorage.setItem(localStorageKey, theme);
+        if(themeToggleButton) {
+            if (theme === 'dark') {
+                themeToggleIcon.classList.replace('fa-sun', 'fa-moon');
+            } else {
+                themeToggleIcon.classList.replace('fa-moon', 'fa-sun');
+            }
+        }
+    };
+
+    const toggleTheme = () => {
+        const currentTheme = body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        applyTheme(newTheme);
+    };
+
+    const initialTheme = localStorage.getItem(localStorageKey) || 'light';
+    applyTheme(initialTheme);
+
+    if (themeToggleButton) {
+        themeToggleButton.addEventListener('click', toggleTheme);
+    }
+
+    // --- SEARCH SUGGESTIONS LOGIC ---
     const searchInput = document.getElementById('navbar-search-input');
     const suggestionsBox = document.getElementById('search-suggestions');
     let debounceTimer;
@@ -269,7 +241,7 @@
         });
     }
 
-    // Manual initialization for the notification dropdown
+    // --- NOTIFICATION DROPDOWN INIT ---
     const notificationDropdownElement = document.getElementById('notificationDropdown');
     if (notificationDropdownElement) {
         new bootstrap.Dropdown(notificationDropdownElement);

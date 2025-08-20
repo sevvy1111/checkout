@@ -1,38 +1,53 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load listings_tags %}
 
 {% block title %}My Wishlist{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-    <h1 class="mb-4">Wishlist</h1>
+<div class="row">
+    <div class="col-lg-3">
+        {% include 'accounts/partials/dashboard_nav.html' %}
+    </div>
 
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
-        {% for item in saved_items %}
-            <div class="col">
-                <div class="card listing-card h-100">
-                    <a href="{{ item.listing.get_absolute_url }}">
-                        {% if item.listing.images.first %}
-                            <img src="{{ item.listing.images.first.image.url }}" class="card-img-top" alt="{{ item.listing.title }}">
-                        {% else %}
-                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                                <span class="text-muted">No Image</span>
+    <div class="col-lg-9">
+        <h2 class="mb-4">My Wishlist</h2>
+        {% if saved_items %}
+            <div class="listing-grid">
+                {% for item in saved_items %}
+                    <div class="listing-card position-relative">
+                        <a href="{{ item.listing.get_absolute_url }}">
+                            <div class="listing-card-image-container">
+                                {% if item.listing.images.first %}
+                                    <img src="{{ item.listing.images.first.image.url }}" class="listing-card-image" alt="{{ item.listing.title }}" loading="lazy">
+                                {% else %}
+                                    <div class="cart-item-image-placeholder">
+                                        <span>No Image</span>
+                                    </div>
+                                {% endif %}
                             </div>
-                        {% endif %}
-                    </a>
-                    <div class="card-body">
-                        <h5 class="listing-card-title fw-bold">₱{{ item.listing.price|philippine_currency }}</h5>
-                        <p class="listing-cart-title font-weight-bold">
-                        <a href="{{ item.listing.get_absolute_url }}">{{ item.listing.title }}</a></p>
-                        <p class="card-text text-muted small">{{ item.listing.city }}</p>
+                        </a>
+
+                        <div class="listing-card-body">
+                            <a href="{{ item.listing.get_absolute_url }}" class="text-decoration-none">
+                               <h5 class="listing-title listing-title--card">{{ item.listing.title }}</h5>
+                            </a>
+                            <p class="listing-card-price">₱{{ item.listing.price|philippine_currency }}</p>
+                        </div>
+
+                        <div class="card-footer bg-transparent border-top-0">
+                             <a href="{% url 'listings:remove_from_saved' pk=item.pk %}" class="btn btn-sm btn-outline-danger w-100">
+                                 <i class="fas fa-trash-alt me-1"></i> Remove
+                             </a>
+                        </div>
                     </div>
-                </div>
+                {% endfor %}
             </div>
-        {% empty %}
-            <div class="col-12">
-                <p class="text-center text-muted fs-5">You haven't saved any items yet.</p>
+        {% else %}
+            <div class="text-center py-5">
+                <p class="lead">Your wishlist is empty.</p>
+                <a href="{% url 'listings:listing_list' %}" class="btn btn-primary">Find something to save</a>
             </div>
-        {% endfor %}
+        {% endif %}
     </div>
 </div>
 {% endblock %}

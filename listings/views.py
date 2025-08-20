@@ -34,6 +34,40 @@ class ListingListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['filter'] = self.filterset
+
+        # --- THIS BLOCK IS THE FIX ---
+        page_title = "Find Deals"
+        search_query = self.request.GET.get('q')
+        category_param = self.request.GET.get('category')
+        city_name = self.request.GET.get('city')
+        category = None
+
+        # Try to find the category, whether by ID or by Name
+        if category_param:
+            try:
+                # First, try to treat it as a numerical ID
+                category = Category.objects.get(pk=int(category_param))
+            except (ValueError, TypeError, Category.DoesNotExist):
+                # If that fails, try to treat it as a name (case-insensitive)
+                try:
+                    category = Category.objects.get(name__iexact=category_param)
+                except Category.DoesNotExist:
+                    category = None
+
+        # Now, build the title with the correct priority
+        if search_query:
+            page_title = f"Search Results for '{search_query}'"
+        elif category:
+            if city_name:
+                page_title = f"{category.name} in {city_name.title()}"
+            else:
+                page_title = f"Deals in {category.name}"
+        elif city_name:
+            page_title = f"Deals in {city_name.title()}"
+
+        context['page_title'] = page_title
+        # --- END OF FIX ---
+
         if self.request.user.is_authenticated:
             context['saved_listing_ids'] = SavedItem.objects.filter(
                 user=self.request.user
@@ -41,6 +75,7 @@ class ListingListView(ListView):
         else:
             context['saved_listing_ids'] = []
         return context
+
 
 
 class ListingDetailView(DetailView):
@@ -239,7 +274,7 @@ def view_cart(request):
     cart, _ = Cart.objects.get_or_create(user=request.user)
     cart_items = cart.items.select_related('listing').prefetch_related('listing__images').all()
     subtotal = sum(item.total_price for item in cart_items)
-    return render(request, 'listings/cart_detail.html', {'cart_items': cart_items, 'subtotal': subtotal})
+    return render(request, 'listings/cart_detail.html', {'cart_items': cart_items, 'subtotal': subtotal, 'cart': cart})
 
 
 @login_required
@@ -250,14 +285,27 @@ def remove_from_cart(request, pk):
     messages.info(request, f"'{listing_title}' was removed from your cart.")
     return redirect('listings:view_cart')
 
+@login_required
+def remove_from_saved(request, pk):
+    saved_item = get_object_or_404(SavedItem, pk=pk, user=request.user)
+    listing_title = saved_item.listing.title
+    saved_item.delete()
+    messages.success(request, f"Removed '{listing_title}' from your wishlist.")
+    return redirect('accounts:saved_listings')
+
 
 @login_required
 def checkout(request):
     cart = get_object_or_404(Cart, user=request.user)
     cart_items = cart.items.select_related('listing').all()
-    if not cart_items:
+    if cart.has_out_of_stock_items:
+        messages.error(request, "One or more items in your cart are out of stock. Please update your cart.")
+        return redirect('listings:view_cart')
+
+    if not cart_items.exists():
         messages.warning(request, "Your cart is empty. Add items before checking out.")
         return redirect('listings:view_cart')
+
     subtotal = sum(item.total_price for item in cart_items)
     shipping_fee = decimal.Decimal(str(round(random.uniform(50, 250), 2)))
     grand_total = (subtotal or 0) + shipping_fee
@@ -319,20 +367,25 @@ def update_cart_item(request, pk):
         try:
             new_quantity = int(request.POST.get('quantity'))
             with transaction.atomic():
-                item = CartItem.objects.select_for_update().get(pk=pk)
+
+                item = CartItem.objects.select_for_update().select_related('listing').get(pk=pk)
                 listing_stock = item.listing.stock
+
                 if new_quantity <= 0:
                     item.delete()
                     messages.info(request, f"'{item.listing.title}' was removed from your cart.")
                 elif new_quantity <= listing_stock:
                     item.quantity = new_quantity
                     item.save()
-                    messages.success(request, f"Quantity for '{item.listing.title}' updated.")
+
                 else:
+
                     messages.error(request,
                                    f"Cannot update quantity. Only {listing_stock} units are available for '{item.listing.title}'.")
         except (ValueError, TypeError):
             messages.error(request, "Invalid quantity provided.")
+
+
     return redirect('listings:view_cart')
 
 
@@ -364,7 +417,6 @@ def view_receipt(request, pk):
 def search_suggestions(request):
     query = request.GET.get('q', '')
     data = []
-    # FIX: Changed condition to trigger on the first character
     if len(query) > 0:
         listings = Listing.objects.filter(title__icontains=query, status='available').prefetch_related('images')[:5]
         for listing in listings:
@@ -375,6 +427,8 @@ def search_suggestions(request):
                 'image_url': first_image.image.url if first_image else 'https://via.placeholder.com/40x40?text=No+Img'
             })
     return JsonResponse({'suggestions': data})
+
+
 @login_required
 def view_invoice(request, pk):
     order = get_object_or_404(Order, pk=pk)
@@ -385,10 +439,17 @@ def view_invoice(request, pk):
     if not (is_buyer or is_seller):
         return HttpResponseForbidden("You are not allowed to view this invoice.")
 
-    order_items = order.items.select_related('listing').prefetch_related('listing__images').all()
+
+    seller_items = order.items.filter(listing__seller=request.user).select_related('listing').prefetch_related(
+        'listing__images')
+
+
+    seller_subtotal = sum(item.total_price for item in seller_items)
+
     context = {
         'order': order,
-        'order_items': order_items,
-        'subtotal': order.total_price - order.shipping_fee,
+        'order_items': seller_items,
+        'subtotal': seller_subtotal,
+        'is_seller_view': True,
     }
     return render(request, 'listings/invoice.html', context)

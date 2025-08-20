@@ -2,9 +2,8 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from asgiref.sync import sync_to_async
 from .models import SupportTicket, SupportMessage
-from .bot import get_bot_response
+from .bot import get_bot_response, get_welcome_message  # Import both functions
 
 
 class SupportConsumer(AsyncWebsocketConsumer):
@@ -23,22 +22,14 @@ class SupportConsumer(AsyncWebsocketConsumer):
         )
         await self.accept()
 
-        # FIX: Added "Learn how to sell" back to the welcome message
-        welcome_message = (
-            "Hi! Is there anything I can help you with?<br>"
-            "<ul>"
-            "<li><a href='#' class='chat-suggestion' data-message='Track my order'>Track your order</a></li>"
-            "<li><a href='#' class='chat-suggestion' data-message='Search for products'>Search for products</a></li>"
-            "<li><a href='#' class='chat-suggestion' data-message='View my wishlist'>View your wishlist</a></li>"
-            "<li><a href='#' class='chat-suggestion' data-message='How to sell'>Learn how to sell</a></li>"
-            "<li><a href='#' class='chat-suggestion' data-message='Report a user'>Report a user</a></li>"
-            "</ul>"
-        )
+        # Get the welcome message from the bot logic file
+        welcome_message = get_welcome_message()
 
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {'type': 'chat_message', 'sender': 'bot', 'message': welcome_message}
-        )
+        # Send welcome message directly to the user
+        await self.send(text_data=json.dumps({
+            'sender': 'bot',
+            'message': welcome_message,
+        }))
 
     async def disconnect(self, close_code):
         if hasattr(self, 'room_group_name'):
@@ -51,12 +42,14 @@ class SupportConsumer(AsyncWebsocketConsumer):
         data = json.loads(text_data)
         message = data['message']
 
+        # Save and broadcast the user's message
         await self.save_message('user', message)
         await self.channel_layer.group_send(
             self.room_group_name,
             {'type': 'chat_message', 'sender': 'user', 'message': message}
         )
 
+        # Get and broadcast the bot's response
         message_history = await self.get_message_history()
         bot_response = await self.get_bot_response_async(message, message_history)
 
@@ -67,6 +60,7 @@ class SupportConsumer(AsyncWebsocketConsumer):
         )
 
     async def chat_message(self, event):
+        # This function sends messages from the group to the WebSocket
         await self.send(text_data=json.dumps({
             'sender': event['sender'],
             'message': event['message'],
@@ -76,12 +70,14 @@ class SupportConsumer(AsyncWebsocketConsumer):
     def get_or_create_ticket(self):
         ticket, created = SupportTicket.objects.get_or_create(user=self.user, status__in=['open', 'escalated'])
         if not created and ticket.status == 'closed':
+            # Create a new ticket if the latest one is closed
             ticket = SupportTicket.objects.create(user=self.user, status='open')
         return ticket
 
     @database_sync_to_async
     def save_message(self, sender, message):
-        if "chat-suggestion" in message:
+        # Prevents saving the raw HTML suggestion links as messages
+        if "chat-suggestion" in message and sender == 'user':
             return
         return SupportMessage.objects.create(ticket=self.ticket, sender=sender, message=message)
 

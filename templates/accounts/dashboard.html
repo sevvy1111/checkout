@@ -4,69 +4,76 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>My Listings</h2>
-        <a href="{% url 'listings:listing_create' %}" class="btn btn-primary">
-            <i class="fas fa-plus-circle me-1"></i> Create New Listing
-        </a>
+<div class="row">
+    <div class="col-lg-3">
+        {% include 'accounts/partials/dashboard_nav.html' %}
     </div>
 
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped table-hover align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Image</th>
-                            <th>Title</th>
-                            <th>Price</th>
-                            <th>Status</th>
-                            <th>Stock</th>
-                            <th>Date Listed</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for listing in listings %}
-                        <tr>
-                            <td>
-                                {% comment %}
-                                  FIX: Added a check to prevent an error if a listing has no image.
-                                {% endcomment %}
-                                {% if listing.images.first %}
-                                    <img src="{{ listing.images.first.image.url }}" alt="{{ listing.title }}" class="img-fluid rounded" style="width: 60px; height: 60px; object-fit: cover;">
-                                {% else %}
-                                    <img src="https://via.placeholder.com/60x60?text=No+Img" alt="No Image Available" class="img-fluid rounded">
-                                {% endif %}
-                            </td>
-                            <td><a class="listing-dashboard-title" href="{{ listing.get_absolute_url }}">{{ listing.title }}</a></td>
-                            <td>₱{{ listing.price|philippine_currency }}</td>
-                            <td><span class="badge bg-{{ listing.status|listing_status_badge }}">{{ listing.get_status_display }}</span></td>
-                            <td>{{ listing.stock }}</td>
-                            <td>{{ listing.created|date:"M j, Y" }}</td>
-                            <td>
-                                <a href="{% url 'listings:listing_delete' pk=listing.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
-                                <a href="{% url 'listings:listing_update' pk=listing.pk %}" class="btn btn-sm btn-outline-secondary">
-                                    <i class="fas fa-edit"></i> Edit
-                                </a>
-                                {% if listing.status == 'available' %}
-                                <form action="{% url 'listings:mark_listing_as_sold' pk=listing.pk %}" method="post" class="d-inline ms-1">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-success">
-                                        <i class="fas fa-check-circle"></i> Sold
-                                    </button>
-                                </form>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="7" class="text-center text-muted py-4">You have not created any listings yet.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <div class="col-lg-9">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>My Listings</h2>
+            <a href="{% url 'listings:listing_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-1"></i> Create New Listing
+            </a>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Image</th>
+                                <th>Title</th>
+                                <th>Price</th>
+                                <th>Status</th>
+                                <th>Stock</th>
+                                <th>Date Listed</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for listing in listings %}
+                            <tr>
+                                <td>
+                                    {% if listing.images.first %}
+                                        <img src="{{ listing.images.first.image.url }}" alt="{{ listing.title }}" class="img-fluid rounded" style="width: 60px; height: 60px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="cart-item-image-placeholder" style="width: 60px; height: 60px;">
+                                            <span>No Img</span>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td><a class="listing-title listing-title--dashboard" href="{{ listing.get_absolute_url }}">{{ listing.title }}</a></td>
+                                <td>₱{{ listing.price|philippine_currency }}</td>
+                                <td><span class="badge bg-{{ listing.status|listing_status_badge }}">{{ listing.get_status_display }}</span></td>
+                                <td>{{ listing.stock }}</td>
+                                <td>{{ listing.created|date:"M j, Y" }}</td>
+                                <td>
+                                    <a href="{% url 'listings:listing_update' pk=listing.pk %}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'listings:listing_delete' pk=listing.pk %}" class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                    {% if listing.status == 'available' %}
+                                    <form action="{% url 'listings:mark_listing_as_sold' pk=listing.pk %}" method="post" class="d-inline ms-1">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-success" title="Mark as Sold">
+                                            <i class="fas fa-check-circle"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">You have not created any listings yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

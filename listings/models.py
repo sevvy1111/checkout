@@ -102,6 +102,11 @@ class Cart(models.Model):
     def __str__(self):
         return f"Cart of {self.user.username}"
 
+    @property
+    def has_out_of_stock_items(self):
+
+        return any(item.quantity > item.listing.stock for item in self.items.all())
+
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')

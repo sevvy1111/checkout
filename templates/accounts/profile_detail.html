@@ -9,8 +9,21 @@
             <div class="profile-info-card text-center">
                 <img src="{% if profile_user.profile.avatar %}{{ profile_user.profile.avatar.url }}{% else %}{% static 'images/default_avatar.svg' %}{% endif %}" class="avatar-lg mb-3" alt="{{ user.username }}'s profile image">
                 <h4 class="profile-name">{{ profile_user.get_full_name}}</h4>
+              {% if seller_average_rating %}
+                <div class="text-warning my-2">
+                    <i class="fas fa-star"></i>
+                    <span class="ms-1 fw-bold">{{ seller_average_rating|floatformat:1 }}</span>
+                    <span class="text-muted small">(average rating)</span>
+                </div>
+                {% else %}
+                <p class="text-muted my-2 small">No ratings yet</p>
+                {% endif %}
                 <p class="text-muted small mb-1">
-                    {% if profile_user.profile.phone %}{{ profile_user.profile.phone }}{% else %}No phone provided{% endif %}
+                     {% if profile_user.profile.phone %}
+                        {{ profile_user.profile.full_phone_number }}
+                    {% else %}
+                        No phone provided
+                    {% endif %}
                 </p>
                 <p class="profile-bio">{{ profile_user.profile.bio|default:"No bio yet."|linebreaksbr }}</p>
             </div>
@@ -38,7 +51,7 @@
                         <div class="card-body">
                             <div>
                                 <a href="{{ listing.get_absolute_url }}" class="text-decoration-none text-dark">
-                                    <h5 class="listing-profile-title">{{ listing.title }}</h5>
+                                    <h5 class="listing-title listing-title--profile">{{ listing.title }}</h5>
                                 </a>
                                 <span class="listing-profile-price">₱{{ listing.price|philippine_currency }}</span>
                             </div>

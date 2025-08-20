@@ -6,34 +6,63 @@
 
 {% block content %}
 <div class="container my-5">
-
-    <h2 class="mb-4">Shopping Cart
-        <i class="fas fa-shopping-cart me-1"></i>
-</h2>
+    <h2 class="mb-4">
+        Shopping Cart <i class="fas fa-shopping-cart ms-1"></i>
+    </h2>
     {% if cart_items %}
     <div class="row">
         <div class="col-lg-8">
             {% for item in cart_items %}
-            <div class="card mb-3">
+            <div class="card cart-item-card mb-3 {% if item.quantity > item.listing.stock %}border-danger{% endif %}"
+                 data-price="{{ item.listing.price }}">
                 <div class="row g-0">
-                    <div class="col-md-3">
-                        <img src="{{ item.listing.images.first.image.url }}" class="img-fluid rounded-start" alt="{{ item.listing.title }}">
-                    </div>
-                    <div class="col-md-9">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <h5 class="listing-cart-title">{{ item.listing.title }}</h5>
-                                <a href="{% url 'listings:remove_from_cart' pk=item.pk %}" class="btn-close" aria-label="Remove"></a>
+                    <div class="col-md-2">
+                        <a href="{{ item.listing.get_absolute_url }}">
+                            <div class="listing-card-image-container">
+                                 {% if item.listing.images.first %}
+                                    <img src="{{ item.listing.images.first.image.url }}" class="listing-card-image rounded-start" alt="{{ item.listing.title }}">
+                                {% else %}
+                                    <div class="cart-item-image-placeholder">
+                                        <span>No Image</span>
+                                    </div>
+                                {% endif %}
                             </div>
-                            <p class="card-text fw-bold">₱{{ item.total_price|philippine_currency }}</p>
+                        </a>
+                    </div>
+                    <div class="col-md-10">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center h-100">
+                                <div class="me-3">
+                                    <a href="{{ item.listing.get_absolute_url }}" class="text-decoration-none">
+                                        <h5 class="listing-title listing-title--cart mb-1">{{ item.listing.title }}</h5>
+                                    </a>
+                                    <div class="card-text">
+                                        <span class="fw-bold" id="total-price-{{ item.pk }}">₱{{ item.total_price|philippine_currency }}</span>
+                                        {% if item.quantity > 1 %}
+                                            <small class="text-muted ms-1">(₱{{ item.listing.price|philippine_currency }} each)</small>
+                                        {% endif %}
+                                    </div>
 
-                            <form method="post" action="{% url 'listings:update_cart_item' pk=item.pk %}" class="d-flex align-items-center">
-                                {% csrf_token %}
-                                <label for="quantity-{{ item.pk }}" class="form-label me-2">Qty:</label>
-                                <input type="number" name="quantity" id="quantity-{{ item.pk }}" value="{{ item.quantity }}" min="1" max="{{ item.listing.stock }}" class="form-control" style="width: 80px;">
-                                <button type="submit" class="btn btn-secondary btn-sm ms-2">Update</button>
-                            </form>
-                            <small class="text-muted">Stock available: {{ item.listing.stock }}</small>
+                                    {% if item.quantity > item.listing.stock %}
+                                        <small class="text-danger fw-bold d-block mt-1">
+                                            Only {{ item.listing.stock }} left in stock
+                                        </small>
+                                    {% else %}
+                                        <small class="text-muted d-block mt-1">Stock: {{ item.listing.stock }}</small>
+                                    {% endif %}
+                                </div>
+
+                                <div class="text-end">
+                                    <div class="quantity-widget d-flex align-items-center">
+                                        <button class="btn btn-outline-secondary btn-sm quantity-btn" data-item-id="{{ item.pk }}" data-action="decrease">-</button>
+                                        <input type="number" class="quantity-input mx-1" value="{{ item.quantity }}"
+                                               min="1" max="{{ item.listing.stock }}" data-item-id="{{ item.pk }}"
+                                               aria-label="Item quantity">
+                                        <button class="btn btn-outline-secondary btn-sm quantity-btn" data-item-id="{{ item.pk }}" data-action="increase">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="{% url 'listings:remove_from_cart' pk=item.pk %}" class="btn-close position-absolute" style="top: 0.5rem; right: 0.5rem;" aria-label="Remove"></a>
                         </div>
                     </div>
                 </div>
@@ -50,7 +79,11 @@
                             <strong>₱{{ subtotal|philippine_currency }}</strong>
                         </li>
                         <li class="list-group-item d-flex justify-content-between">
-                            <a href="{% url 'listings:checkout' %}" class="btn btn-primary w-100">Proceed to Checkout</a>
+                            {% if cart.has_out_of_stock_items %}
+                                <button class="btn btn-secondary w-100" disabled>Update Cart to Proceed</button>
+                            {% else %}
+                                <a href="{% url 'listings:checkout' %}" class="btn btn-primary w-100">Proceed to Checkout</a>
+                            {% endif %}
                         </li>
                     </ul>
                 </div>
@@ -58,11 +91,101 @@
         </div>
     </div>
     {% else %}
-    <div class="text-center">
-        <p>Your <i class="fas fa-shopping-cart me-1"></i>
- is empty.</p>
-        <a href="{% url 'listings:listing_list' %}" class="btn btn-primary">Browse</a>
+    <div class="text-center py-5">
+        <p class="lead">Your <i class="fas fa-shopping-cart me-1"></i> is empty.</p>
+        <a href="{% url 'listings:listing_list' %}" class="btn btn-primary">Browse Products</a>
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let debounceTimer;
+
+    function formatCurrency(value) {
+        return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(value);
+    }
+
+    function updateCartItem(itemId, quantity) {
+        const url = "{% url 'listings:update_cart_item' pk=0 %}".replace('0', itemId);
+        const formData = new FormData();
+        formData.append('quantity', quantity);
+        formData.append('csrfmiddlewaretoken', csrftoken);
+
+        fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .finally(() => {
+            window.location.reload();
+        });
+    }
+
+    function handleQuantityChange(inputElement) {
+        const itemId = inputElement.dataset.itemId;
+        const newQuantity = parseInt(inputElement.value);
+        const card = inputElement.closest('.cart-item-card');
+        const unitPrice = parseFloat(card.dataset.price);
+        const totalPriceElement = document.getElementById(`total-price-${itemId}`);
+
+        const newTotalPrice = newQuantity * unitPrice;
+        totalPriceElement.textContent = formatCurrency(newTotalPrice);
+
+        // This part is now handled in the main event listeners
+        // clearTimeout(debounceTimer);
+        // debounceTimer = setTimeout(() => {
+        //     updateCartItem(itemId, newQuantity);
+        // }, 350);
+    }
+
+    document.querySelectorAll('.quantity-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const itemId = this.dataset.itemId;
+            const action = this.dataset.action;
+            const input = this.parentElement.querySelector('.quantity-input');
+            let currentQuantity = parseInt(input.value);
+
+            if (action === 'increase') {
+                currentQuantity++;
+            } else if (action === 'decrease') {
+                currentQuantity--;
+            }
+
+            if (currentQuantity > 0) {
+                input.value = currentQuantity;
+                handleQuantityChange(input); // Call the new function to update the price
+            }
+
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                updateCartItem(itemId, currentQuantity > 0 ? currentQuantity : 0);
+            }, 350);
+        });
+    });
+
+    document.querySelectorAll('.quantity-input').forEach(input => {
+        input.addEventListener('change', function() {
+            const itemId = this.dataset.itemId;
+            let newQuantity = parseInt(this.value);
+            const maxStock = parseInt(this.getAttribute('max'));
+
+            if (isNaN(newQuantity) || newQuantity < 1) {
+                newQuantity = 1;
+            }
+            if (newQuantity > maxStock) {
+                newQuantity = maxStock;
+            }
+            this.value = newQuantity;
+
+            handleQuantityChange(this); // Call the new function to update the price
+            updateCartItem(itemId, newQuantity);
+        });
+    });
+});
+</script>
 {% endblock %}

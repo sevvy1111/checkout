@@ -6,56 +6,66 @@
 
 {% block content %}
 <div class="container my-5">
-    <div class="receipt-header text-center mb-4">
-        <h2>Thank You for Your Order!</h2>
-        <p>Order #{{ order.id }} confirmed on {{ order.created_at|date:"F j, Y" }}</p>
-    </div>
-
-    <div class="row">
-        <div class="col-lg-8 mx-auto">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
             <div class="card shadow-sm">
-                <div class="card-header">
-                    <h5>Order Details</h5>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2>Receipt for Order #{{ order.id }}</h2>
+                        <p class="text-muted mb-0">Date: {{ order.created_at|date:"F j, Y" }}</p>
+                    </div>
+                    <img src="{% static 'images/logo.png' %}" alt="CheckoutPH Logo" class="invoice-logo">
                 </div>
                 <div class="card-body">
-                    <ul class="list-unstyled">
+                    <h5 class="card-title">Purchased Items</h5>
+                    <ul class="list-group list-group-flush">
                         {% for item in order_items %}
-                        <li class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-3">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
                             <div class="d-flex align-items-center">
-                                {% comment %}
-                                  FIX: Added checks to prevent errors if the listing or its images are deleted.
-                                  1. Check if item.listing is not None.
-                                  2. Check if there is a first image.
-                                  3. Show a placeholder if either check fails.
-                                {% endcomment %}
                                 {% if item.listing and item.listing.images.first %}
-                                    <img src="{{ item.listing.images.first.image.url }}" class="rounded me-3" width="80" height="80" style="object-fit: cover;" alt="{{ item.listing.title }}">
+                                    <img src="{{ item.listing.images.first.image.url }}" class="rounded me-3" width="70" height="70" style="object-fit: cover;" alt="{{ item.listing.title }}">
                                 {% else %}
-                                    <img src="https://via.placeholder.com/80x80?text=No+Image" class="rounded me-3" alt="No Image Available">
+                                    <div class="cart-item-image-placeholder me-3" style="width: 70px; height: 70px;">
+                                        <span>No Img</span>
+                                    </div>
                                 {% endif %}
-
                                 <div>
-                                    <span class="fw-bold listing-cart-title">{{ item.listing.title|default:"[Deleted Listing]" }}</span><br>
-                                    <small class="text-muted">{{ item.quantity }} x ₱{{ item.price|philippine_currency }}</small>
+                                    <h6 class="my-0">{{ item.listing.title|default:"[Deleted Listing]" }}</h6>
+                                    <small class="text-muted">Quantity: {{ item.quantity }}{% if item.quantity > 1 %} @ ₱{{ item.price|philippine_currency }} each{% endif %}</small>
                                 </div>
                             </div>
-                            <span class="fw-bold">₱{{ item.total_price|philippine_currency }}</span>
+                            <span>₱{{ item.total_price|philippine_currency }}</span>
                         </li>
                         {% endfor %}
                     </ul>
-                    <div class="text-end">
-                        <p class="mb-1">Subtotal: <strong>₱{{ subtotal|philippine_currency }}</strong></p>
-                        <p class="mb-1">Shipping Fee: <strong>₱{{ order.shipping_fee|philippine_currency }}</strong></p>
-                        <h5 class="mb-0">Grand Total: <strong class="text-primary">₱{{ order.total_price|philippine_currency }}</strong></h5>
-                    </div>
                 </div>
                 <div class="card-footer">
-                    <h6 class="fw-bold">Shipping to:</h6>
-                    <p class="mb-0">{{ order.full_name }}</p>
-                    <p class="mb-0">{{ order.shipping_address }}</p>
-                    <p class="mb-0">{{ order.shipping_city }}, {{ order.shipping_postal_code }}</p>
-                        <div class="text-right"><h6 class="fw-bold mb-2">Payment Method</h6>
-                        <p class=" mb-0">Cash on Delivery</p></div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Shipping To:</h5>
+                            <p class="mb-0">{{ order.user.get_full_name }}</p>
+                            <p class="mb-0">{{ order.shipping_address }}</p>
+                            <p class="mb-0">{{ order.city }}, {{ order.postal_code }}</p>
+                            <p class="mb-0">{{ order.country }}</p>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <h5>Order Summary</h5>
+                            <ul class="list-unstyled">
+                                <li class="d-flex justify-content-between">
+                                    <span>Subtotal:</span>
+                                    <span>₱{{ subtotal|philippine_currency }}</span>
+                                </li>
+                                <li class="d-flex justify-content-between">
+                                    <span>Shipping Fee:</span>
+                                    <span>₱{{ order.shipping_fee|philippine_currency }}</span>
+                                </li>
+                                <li class="d-flex justify-content-between border-top pt-2 mt-2">
+                                    <strong>Total:</strong>
+                                    <strong>₱{{ order.total_price|philippine_currency }}</strong>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

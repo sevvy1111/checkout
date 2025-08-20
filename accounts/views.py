@@ -5,10 +5,11 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic import DetailView
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.db.models import Avg  # Import Avg
 from .forms import UserRegisterForm, UserUpdateForm, ProfileUpdateForm
-from listings.forms import OrderStatusForm  # Import the new form
-from listings.models import Listing, SavedItem, Order, OrderItem
-from notifications.models import Notification  # Import Notification model
+from listings.forms import OrderStatusForm
+from listings.models import Listing, SavedItem, Order, OrderItem, Review  # Import Review
+from notifications.models import Notification
 
 User = get_user_model()
 
@@ -69,15 +70,13 @@ def order_history(request):
 
 @login_required
 def seller_orders(request):
-    sales = OrderItem.objects.filter(listing__seller=request.user).select_related('order', 'listing').order_by(
-        '-order__created_at')
+    orders = Order.objects.filter(items__listing__seller=request.user).distinct().order_by('-created_at')
+    orders = orders.prefetch_related('items__listing__images')
 
-    # Create a dictionary of forms, one for each unique order
-    forms = {sale.order.id: OrderStatusForm(instance=sale.order) for sale in sales}
-
+    forms = {order.id: OrderStatusForm(instance=order) for order in orders}
     context = {
-        'sales': sales,
-        'forms': forms
+        'orders': orders,
+        'forms': forms,
     }
     return render(request, 'accounts/seller_orders.html', context)
 
@@ -120,4 +119,8 @@ class PublicProfileDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         user = self.get_object()
         context['user_listings'] = Listing.objects.filter(seller=user, status='available').order_by('-created')
+
+        seller_average_rating = Review.objects.filter(listing__seller=user).aggregate(Avg('rating'))['rating__avg']
+        context['seller_average_rating'] = seller_average_rating
+
         return context

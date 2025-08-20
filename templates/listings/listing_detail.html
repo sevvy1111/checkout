@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load listings_tags %}
+{% load crispy_forms_tags %}
 
 {% block title %}{{ listing.title }}{% endblock %}
 
@@ -9,7 +10,7 @@
         <div class="col-lg-8">
             <div class="card mb-4 shadow-sm">
                 {% if listing.images.all %}
-                <div id="listingCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div id="listingCarousel" class="carousel slide listing-detail-carousel" data-bs-ride="carousel">
                     <div class="carousel-inner">
                         {% for image in listing.images.all %}
                         <div class="carousel-item {% if forloop.first %}active{% endif %}">
@@ -27,11 +28,13 @@
                     </button>
                 </div>
                 {% else %}
-                <img src="https://via.placeholder.com/800x600?text=No+Image+Available" class="card-img-top" alt="No Image Available">
+                <div class="cart-item-image-placeholder">
+                    <span>No Image Available</span>
+                </div>
                 {% endif %}
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
-                        <h1 class="listing-detail-title">{{ listing.title }}</h1>
+                        <h1 class="listing-title listing-title--detail">{{ listing.title }}</h1>
                         {% if user.is_authenticated and user != listing.seller %}
                             <button class="btn save-button p-0" data-url="{% url 'listings_api:toggle_save_listing' pk=listing.pk %}">
                                 <i class="{% if is_saved %}fas fa-heart text-danger{% else %}far fa-heart{% endif %} fa-2x"></i>
@@ -54,7 +57,7 @@
                             <h6 class="mb-3">Leave a Review</h6>
                             <form method="post">
                                 {% csrf_token %}
-                                {{ review_form.as_p }}
+                                {{ review_form|crispy }}
                                 <button type="submit" class="btn btn-primary">Submit Review</button>
                             </form>
                         {% elif has_reviewed %}
@@ -66,7 +69,9 @@
 
                     {% for review in reviews %}
                         <div class="d-flex mb-3 border-bottom pb-3">
-                            <img src="{{ review.author.profile.display_avatar_url }}" alt="{{ review.author.username }}" class="rounded-circle me-3" width="50" height="50">
+                            <a href="{% url 'accounts:public_profile' username=review.author.username %}">
+                                <img src="{{ review.author.profile.display_avatar_url }}" alt="{{ review.author.username }}" class="rounded-circle me-3" width="50" height="50">
+                            </a>
                             <div>
                                 <strong>{{ review.author.get_full_name }}</strong> - <small class="text-muted">{{ review.created_at|timesince }} ago</small>
                                 <div class="text-warning my-1">
@@ -85,11 +90,13 @@
         </div>
 
         <div class="col-lg-4">
-           <div class="card shadow-sm mb-4">
+           <div class="card shadow-sm mb-4" style="top: 80px;">
                 <div class="card-body">
                     <h5 class="card-title border-bottom pb-2 mb-3">About Seller</h5>
                     <div class="text-center mb-3">
-                        <img src="{{ listing.seller.profile.display_avatar_url }}" alt="{{ listing.seller.username }}'s avatar" class="rounded-circle mb-2" style="width: 80px; height: 80px; object-fit: cover;">
+                        <a href="{% url 'accounts:public_profile' username=listing.seller.username %}">
+                            <img src="{{ listing.seller.profile.display_avatar_url }}" alt="{{ listing.seller.username }}'s avatar" class="profile-avatar-main mb-2">
+                        </a>
                         <h6>{{ listing.seller.get_full_name }}</h6>
                         <small class="text-muted">Member since {{ listing.seller.date_joined|date:"Y" }}</small>
                         {% if seller_average_rating %}
@@ -98,21 +105,21 @@
                             <span class="ms-1">{{ seller_average_rating|floatformat:1 }} average rating</span>
                         </div>
                         {% else %}
-                        <p class="text-muted mt-1">No seller reviews yet.</p>
+                        <p class="text-muted mt-1">No seller ratings yet.</p>
                         {% endif %}
                     </div>
-                     {% if user.is_authenticated and user != listing.seller %}
-                        <a href="{% url 'messaging:send_message' recipient_username=listing.seller.username %}" class="outline-btn-dark font-bold bg-warning btn w-100">Message Seller</a>
-                     {% endif %} <p class="text-success fw-bold mb-2">In Stock: {{ listing.stock }}</p>
+                    {% if user.is_authenticated and user != listing.seller %}
+                       <a href="{% url 'messaging:send_message' recipient_username=listing.seller.username %}?listing={{ listing.pk }}" class="btn btn-warning w-100">Message Seller</a>
+                    {% endif %}
                 </div>
                 <div class="card-footer bg-transparent border-top-0">
                     {% if user.is_authenticated %}
                         {% if user == listing.seller %}
-                            <a href="{% url 'listings:listing_update' pk=listing.pk %}" class="btn btn-secondary w-100 mb-2">Edit</a>
-                            <a href="{% url 'listings:listing_delete' pk=listing.pk %}" class="btn btn-danger w-100">Delete</a>
+                            <a href="{% url 'listings:listing_update' pk=listing.pk %}" class="btn btn-secondary w-100 mb-2">Edit Listing</a>
+                            <a href="{% url 'listings:listing_delete' pk=listing.pk %}" class="btn btn-danger w-100">Delete Listing</a>
                         {% else %}
                             {% if listing.status == 'available' and listing.stock > 0 %}
-
+                                <p class="text-success fw-bold mb-2">In Stock: {{ listing.stock }}</p>
                                 <a href="{% url 'listings:add_to_cart' pk=listing.pk %}" class="btn btn-success btn-lg w-100">Add to Cart</a>
                             {% else %}
                                 <p class="text-danger fw-bold mb-2 text-center">Out of Stock</p>
@@ -136,12 +143,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (saveButton) {
         saveButton.addEventListener('click', function(event) {
             event.preventDefault();
-            const url = this.dataset.url; // Use data-url for dynamic URL
+            const url = this.dataset.url;
 
             fetch(url, {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': csrftoken, // Defined in base.html
+                    'X-CSRFToken': csrftoken,
                     'Content-Type': 'application/json'
                 }
             })

@@ -1,32 +1,33 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Customer Support{% endblock %}
-
-{% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/chat.css' %}">
-{% endblock %}
+{% block title %}Customer Support Chat{% endblock %}
 
 {% block content %}
 <div class="container my-5">
-    <h2 class="mb-4">Support Chat</h2>
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <div id="chat-log">
-                {% for msg in ticket.messages.all %}
-                <div class="message {{ msg.sender }}">
-                    <div class="bubble">{{ msg.message|linebreaksbr|safe }}</div>
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Support Chat</h4>
+                    <span id="connection-status" class="text-muted small">Connecting...</span>
                 </div>
-                {% endfor %}
-            </div>
-        </div>
-        <div class="card-footer">
-            <form id="chat-form" class="d-flex">
-                <input id="chat-message-input" type="text" class="form-control" autocomplete="off" placeholder="Type your message...">
-                <button id="chat-message-submit" class="btn btn-primary ms-2">Send</button>
-            </form>
-            <div id="connection-status" class="mt-2 text-danger" style="display: none;">
-                Connection lost. Please refresh the page.
+                <div class="card-body">
+                    <div id="chat-log">
+                        {# Chat messages will be appended here by JavaScript #}
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <form id="chat-form" class="d-flex">
+                        <div class="input-group">
+                            <input type="text" id="chat-message-input" class="form-control form-control-lg"
+                                   placeholder="Type your message..." autocomplete="off" disabled>
+                            <button id="chat-message-submit" class="btn btn-primary" type="submit" disabled>
+                                <i class="fas fa-paper-plane"></i> Send
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -34,65 +35,92 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    const ticketId = {{ ticket.id }};
-    const chatLog = document.querySelector('#chat-log');
-    const chatMessageInput = document.querySelector('#chat-message-input');
-    const chatForm = document.querySelector('#chat-form');
-    const chatMessageSubmit = document.querySelector('#chat-message-submit');
-    const connectionStatusDiv = document.querySelector('#connection-status');
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const chatLog = document.getElementById('chat-log');
+            const messageInput = document.getElementById('chat-message-input');
+            const messageSubmit = document.getElementById('chat-message-submit');
+            const connectionStatus = document.getElementById('connection-status');
+            const chatForm = document.getElementById('chat-form');
 
-    const chatSocket = new WebSocket(
-        protocol + '//' + window.location.host + '/ws/support/'
-    );
+            const chatSocket = new WebSocket(
+                (window.location.protocol === 'https:' ? 'wss://' : 'ws://')
+                + window.location.host
+                + '/ws/support/'
+            );
 
-    chatSocket.onmessage = function(e) {
-        const data = JSON.parse(e.data);
-        const messageDiv = document.createElement('div');
-        messageDiv.classList.add('message', data.sender);
+            chatSocket.onopen = function(e) {
+                console.log('WebSocket connection established.');
+                connectionStatus.textContent = 'Connected';
+                connectionStatus.classList.remove('text-muted');
+                connectionStatus.classList.add('text-success');
+                messageInput.disabled = false;
+                messageSubmit.disabled = false;
+                messageInput.placeholder = 'Type your message...';
+            };
 
-        const bubbleDiv = document.createElement('div');
-        bubbleDiv.classList.add('bubble');
-        bubbleDiv.innerHTML = data.message.replace(/\n/g, '<br>');
+            chatSocket.onclose = function(e) {
+                console.error('WebSocket connection closed unexpectedly.');
+                connectionStatus.textContent = 'Disconnected';
+                connectionStatus.classList.remove('text-success');
+                connectionStatus.classList.add('text-danger');
+                messageInput.disabled = true;
+                messageSubmit.disabled = true;
+                messageInput.placeholder = 'Connection lost. Please refresh.';
+            };
 
-        messageDiv.appendChild(bubbleDiv);
-        chatLog.appendChild(messageDiv);
-        chatLog.scrollTop = chatLog.scrollHeight;
-    };
+            chatSocket.onerror = function(e) {
+                console.error('WebSocket error:', e);
+                connectionStatus.textContent = 'Connection Error';
+                connectionStatus.classList.add('text-danger');
+            };
 
-    chatSocket.onclose = function(e) {
-        console.error('Chat socket closed unexpectedly');
-        chatMessageInput.disabled = true;
-        chatMessageSubmit.disabled = true;
-        connectionStatusDiv.style.display = 'block';
-    };
+            chatSocket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                appendMessage(data);
+            };
 
-    chatMessageInput.focus();
-    chatForm.onsubmit = function(e) {
-        e.preventDefault();
-        const message = chatMessageInput.value;
-        if (message.trim() === '') {
-            return;
-        }
+            // Handle clicking on suggestion links
+            chatLog.addEventListener('click', function(e) {
+                if (e.target.classList.contains('chat-suggestion')) {
+                    e.preventDefault();
+                    const message = e.target.dataset.message;
+                    messageInput.value = message;
+                    chatForm.dispatchEvent(new Event('submit', { cancelable: true }));
+                }
+            });
 
-        chatSocket.send(JSON.stringify({
-            'message': message
-        }));
-        chatMessageInput.value = '';
-    };
+            chatForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const message = messageInput.value.trim();
+                if (message) {
+                    chatSocket.send(JSON.stringify({
+                        'message': message
+                    }));
+                    messageInput.value = '';
+                }
+            });
 
-    chatLog.addEventListener('click', function(e) {
-        if (e.target && e.target.classList.contains('chat-suggestion')) {
-            e.preventDefault();
-            const message = e.target.dataset.message;
+            function appendMessage(data) {
+                const messageDiv = document.createElement('div');
+                const bubbleDiv = document.createElement('div');
+                bubbleDiv.classList.add('bubble');
+                bubbleDiv.innerHTML = data.message;
 
-            chatSocket.send(JSON.stringify({
-                'message': message
-            }));
-        }
-    });
+                // --- THIS IS THE FIX ---
+                // We check `data.sender` for the value 'user' instead of comparing usernames.
+                const isUserMessage = data.sender === 'user';
 
-    chatLog.scrollTop = chatLog.scrollHeight;
-</script>
+                if (isUserMessage) {
+                    messageDiv.className = 'message user';
+                } else {
+                    messageDiv.className = 'message bot';
+                }
+
+                messageDiv.appendChild(bubbleDiv);
+                chatLog.appendChild(messageDiv);
+                chatLog.scrollTop = chatLog.scrollHeight; // Auto-scroll to the bottom
+            }
+        });
+    </script>
 {% endblock %}

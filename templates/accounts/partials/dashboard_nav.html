@@ -1,0 +1,19 @@
+<div class="card shadow-sm mb-4">
+    <div class="card-header">
+        <strong>Dashboard Menu</strong>
+    </div>
+    <div class="list-group list-group-flush">
+        <a href="{% url 'accounts:dashboard' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <i class="fas fa-th-list fa-fw me-2"></i> My Listings
+        </a>
+        <a href="{% url 'accounts:seller_orders' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'seller_orders' %}active{% endif %}">
+            <i class="fas fa-dollar-sign fa-fw me-2"></i> Sales
+        </a>
+        <a href="{% url 'accounts:order_history' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'order_history' %}active{% endif %}">
+            <i class="fas fa-history fa-fw me-2"></i> Purchases
+        </a>
+        <a href="{% url 'accounts:saved_listings' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'saved_listings' %}active{% endif %}">
+            <i class="fas fa-heart fa-fw me-2"></i> Wishlist
+        </a>
+    </div>
+</div>

@@ -2,27 +2,28 @@
 {% load crispy_forms_tags %}
 {% load listings_tags %}
 
+{% block main_container_classes %}container page-content my-4{% endblock %}
+
 {% block content %}
-<main class="container">
-    <div class="row">
-        <aside class="col-lg-3">
-            <form id="filter-form" class="mb-4 p-3 bg-light rounded" action="{% url 'listings:listing_list' %}" method="get">
-                {% csrf_token %}
+<div class="row">
+    <aside class="col-lg-3">
+        <div class="filter-sidebar">
+            <h5 class="mb-3">Filters</h5>
+            <form id="filter-form" method="get">
                 {{ filter.form.category|as_crispy_field }}
                 {{ filter.form.city|as_crispy_field }}
-
-                <button type="submit" class="btn btn-primary w-100 mt-3">Apply</button>
+                <button type="submit" class="btn btn-primary w-100 mt-3">Apply Filters</button>
             </form>
-        </aside>
+        </div>
+    </aside>
 
-        <section class="col-lg-9">
-            <h2 class="mb-3">Find Deals</h2>
-            <div id="listings-container" class="listing-grid">
-                {% include 'listings/partials/listings_grid.html' with listings=listings %}
-            </div>
-        </section>
-    </div>
-</main>
+    <section class="col-lg-9">
+        <h2 class="mb-3">{{ page_title }}</h2>
+        <div id="listings-container" class="listing-grid">
+            {% include 'listings/partials/listings_grid.html' with listings=listings %}
+        </div>
+    </section>
+</div>
 {% endblock %}
 
 {% block extra_js %}
