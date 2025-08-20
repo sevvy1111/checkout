@@ -1,12 +1,12 @@
 /* Core Styles for a Modern E-commerce Look */
 body {
-    background-color: #f3f3f3; /* Light gray background */
+    background-color: #f3f3f3;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 /* Navbar & Header */
 .navbar {
-    background-color: #131921; /* Dark header color */
+    background-color: #131921;
     border-bottom: none;
 }
 
@@ -15,7 +15,7 @@ body {
 }
 
 .navbar-brand:hover, .navbar-nav .nav-link:hover {
-    color: #ff9900; /* Amazon-like orange for hover */
+    color: #ff9900;
 }
 
 /* Containers & Cards */
@@ -59,15 +59,11 @@ body {
 }
 
 /* Forms */
-.form-control {
+.form-control, .form-select {
     border-radius: 4px;
 }
 
-.form-select {
-    border-radius: 4px;
-}
-
-/* Specific component styles */
+/* Sidebar */
 .filter-sidebar {
     position: sticky;
     top: 80px;
@@ -78,13 +74,17 @@ body {
     border-radius: 8px;
 }
 
+/* Listing Cards */
 .listing-card {
     border: none;
-    transition: box-shadow .2s ease-in-out;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+    overflow: hidden; /* prevents image from overflowing on hover */
 }
 
 .listing-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-5px); /* slight lift */
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
 
 .listing-card a {
@@ -92,28 +92,30 @@ body {
     color: inherit;
 }
 
-.listing-card .card-img-top {
-    height: 200px;
-    object-fit: cover;
-    border-radius: 10px 10px 0 0;
-}
 .card-img-list {
     height: 200px;
+    width: 100%;
     object-fit: cover;
+    object-position: center center;
     border-top-left-radius: 2.25rem;
     border-top-right-radius: 2.25rem;
+    transition: transform 0.3s ease;
 }
 
+.listing-card:hover .card-img-list {
+    transform: scale(1.05); /* subtle zoom */
+}
 
 .listing-card .card-body {
     padding: 1rem;
 }
 
+/* Save Button */
 .save-button {
     position: absolute;
     top: 10px;
     right: 10px;
-    z-index: 10;
+    z-index: 20; /* above everything */
     border-radius: 50%;
     width: 36px;
     height: 36px;
@@ -122,17 +124,23 @@ body {
     justify-content: center;
     background-color: rgba(255, 255, 255, 0.8);
     border: none;
+    cursor: pointer; /* ensures clickable */
+    pointer-events: auto; /* allows clicks even on hover effects */
+    transition: background 0.2s, transform 0.2s;
 }
 
+.save-button:hover {
+    background-color: rgba(255, 255, 255, 1);
+    transform: scale(1.1); /* subtle pop on hover */
+}
+
+/* Chat Image */
 .chat-image {
     max-width: 250px;
     height: auto;
     border-radius: 8px;
 }
 
-.text-muted-custom {
-    color: rgba(255, 255, 255, 0.7);
-}
 /* Profile and Avatar Styles */
 .profile-info-card {
     text-align: center;
@@ -148,6 +156,7 @@ body {
     object-fit: cover;
     border-radius: 50%;
 }
+
 .profile-avatar-main {
     width: 150px;
     height: 150px;
@@ -155,13 +164,13 @@ body {
     border-radius: 50%;
 }
 
-/* Cart Item Image Styles */
+/* Cart Item Images */
 .cart-item-image {
-    width: 100%; /* Make image responsive within its container */
-    height: 120px; /* Fixed height for consistency */
-    object-fit: cover; /* Crop image to fit, maintaining aspect ratio */
-    border-radius: 8px; /* Rounded corners */
-    background-color: #f0f0f0; /* Placeholder color */
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    background-color: #f0f0f0;
 }
 
 .cart-item-image-placeholder {
@@ -175,17 +184,71 @@ body {
     color: #999;
     font-size: 0.9rem;
 }
-/* Reuse this for any icon+badge in the navbar */
+
+/* Navbar Icon + Badge */
 .navbar .icon-badge {
   position: relative;
   display: inline-block;
-  line-height: 1; /* keeps the badge from drifting with line-height */
+  line-height: 1;
 }
 
 .navbar .icon-badge > .badge {
   position: absolute;
   top: 0;
   left: 100%;
-  transform: translate(-50%, -50%); /* center on the top-right corner of the icon */
-  pointer-events: none; /* clicks go to the link, not the badge */
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* Listing Grid */
+.listing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin: 0 auto;
+    padding: 1rem 0;
+}
+
+/* Mobile-friendly adjustments */
+@media (max-width: 576px) {
+  .dropdown-menu {
+    position: static !important;
+    float: none;
+    width: 100%;
+    margin-top: 0.5rem;
+    border-radius: 0.25rem;
+  }
+
+  .dropdown-item {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .navbar .icon-badge > .badge {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    margin-left: 0.25rem;
+    font-size: 0.75rem;
+  }
+
+  .navbar-nav {
+    text-align: center;
+  }
+
+  .navbar-nav .nav-item {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .navbar-nav .nav-link {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .search-suggestions-container {
+    width: 100%;
+  }
 }

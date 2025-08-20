@@ -8,10 +8,6 @@
         <aside class="col-lg-3">
             <form id="filter-form" class="mb-4 p-3 bg-light rounded" action="{% url 'listings:listing_list' %}" method="get">
                 {% csrf_token %}
-                {% comment %}
-                  FIX: Instead of rendering the whole form, we render each field
-                  individually to explicitly exclude the 'q' (search) field.
-                {% endcomment %}
                 {{ filter.form.category|as_crispy_field }}
                 {{ filter.form.city|as_crispy_field }}
 
@@ -20,8 +16,8 @@
         </aside>
 
         <section class="col-lg-9">
-             <h2 class="mb-3">Find Deals</h2>
-            <div id="listings-container" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            <h2 class="mb-3">Find Deals</h2>
+            <div id="listings-container" class="listing-grid">
                 {% include 'listings/partials/listings_grid.html' with listings=listings %}
             </div>
         </section>

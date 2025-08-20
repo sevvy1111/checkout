@@ -100,7 +100,7 @@
     line-height: 1.2;
     margin-bottom: 5px;
     display: -webkit-box;
-    -webkit-line-clamp: 5; /* show max 2 lines */
+    -webkit-line-clamp: 3; /* show max 2 lines */
     -webkit-box-orient: vertical;
     overflow: hidden;
     min-height: calc(1.2em * 2);
@@ -118,13 +118,25 @@
 }
 
 .listing-card-title {
+    font-size: 20px;
+    line-height: 1.2;
+    margin-bottom: 5px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;     /* show max 2 lines */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: calc(1.2em * 2);
+}
+
+.listing-profile-title {
     font-size: 14px;
     line-height: 1.2;
     margin-bottom: 5px;
     display: -webkit-box;
-    -webkit-line-clamp: 10;     /* show max 2 lines */
+    -webkit-line-clamp: 2;     /* show max 2 lines */
     -webkit-box-orient: vertical;
     overflow: hidden;
+    min-height: calc(1.2em * 2);
 }
 
 
@@ -148,4 +160,14 @@
     background-color: var(--white-color);
     padding: 20px;
     border-radius: 2px;
+}
+.listing-profile-price {
+    font-size: 14px;
+    line-height: 1.2;
+    margin-bottom: 5px;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;     /* show max 2 lines */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: calc(1.2em * 1);
 }

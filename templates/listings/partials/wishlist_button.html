@@ -1,0 +1,10 @@
+{% load static %}
+<button class="btn btn-outline-danger wishlist-btn"
+        data-listing-id="{{ listing.pk }}"
+        data-is-saved="{{ is_saved|yesno:'true,false' }}">
+  {% if is_saved %}
+    <i class="bi bi-heart-fill"></i> Saved
+  {% else %}
+    <i class="bi bi-heart"></i> Save
+  {% endif %}
+</button>

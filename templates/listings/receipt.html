@@ -46,15 +46,16 @@
                     <div class="text-end">
                         <p class="mb-1">Subtotal: <strong>₱{{ subtotal|philippine_currency }}</strong></p>
                         <p class="mb-1">Shipping Fee: <strong>₱{{ order.shipping_fee|philippine_currency }}</strong></p>
-                        <hr>
                         <h5 class="mb-0">Grand Total: <strong class="text-primary">₱{{ order.total_price|philippine_currency }}</strong></h5>
                     </div>
                 </div>
                 <div class="card-footer">
-                    <h6>Shipping to:</h6>
+                    <h6 class="fw-bold">Shipping to:</h6>
                     <p class="mb-0">{{ order.full_name }}</p>
                     <p class="mb-0">{{ order.shipping_address }}</p>
                     <p class="mb-0">{{ order.shipping_city }}, {{ order.shipping_postal_code }}</p>
+                        <div class="text-right"><h6 class="fw-bold mb-2">Payment Method</h6>
+                        <p class=" mb-0">Cash on Delivery</p></div>
                 </div>
             </div>
         </div>

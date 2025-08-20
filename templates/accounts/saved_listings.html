@@ -22,7 +22,8 @@
                     </a>
                     <div class="card-body">
                         <h5 class="listing-card-title fw-bold">₱{{ item.listing.price|philippine_currency }}</h5>
-                        <p class="card-text">{{ item.listing.title }}</p>
+                        <p class="listing-cart-title font-weight-bold">
+                        <a href="{{ item.listing.get_absolute_url }}">{{ item.listing.title }}</a></p>
                         <p class="card-text text-muted small">{{ item.listing.city }}</p>
                     </div>
                 </div>

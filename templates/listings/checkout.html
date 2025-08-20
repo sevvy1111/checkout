@@ -59,7 +59,7 @@
                             <div class="d-flex align-items-center">
                                 <img src="{{ item.listing.images.first.image.url }}" class="rounded me-3" width="60" height="60" style="object-fit: cover;" alt="{{ item.listing.title }}">
                                 <div>
-                                    <span class="fw-bold">{{ item.listing.title }}</span><br>
+                                    <span class="fw-bold listing-cart-title">{{ item.listing.title }}</span><br>
                                     <small class="text-muted">{{ item.quantity }} x ₱{{ item.listing.price|philippine_currency }}</small>
                                 </div>
                             </div>

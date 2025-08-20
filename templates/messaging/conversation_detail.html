@@ -8,7 +8,12 @@
 <div class="container my-4">
     <div class="card">
         <div class="card-header">
-            <h4>Conversation with <a href="{% url 'accounts:public_profile' username=other_user.username %}">{{ other_user.get_full_name }}</a></h4>
+           <h4>
+  Conversation with
+  <a href="{% url 'accounts:public_profile' username=other_user.username %}" class="link-warning text-decoration-none">
+    {{ other_user.get_full_name }}
+  </a>
+</h4>
         </div>
         <div class="card-body" style="max-height: 60vh; overflow-y: auto;" id="message-list">
             {% for message in conversation.messages.all %}
