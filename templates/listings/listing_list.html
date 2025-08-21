@@ -10,11 +10,11 @@
         <div class="filter-sidebar card p-3">
             <h5 class="d-flex justify-content-between align-items-center mb-3">
                 <span>Filters</span>
-                <button class="btn btn-link d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#filter-collapse" aria-expanded="false" aria-controls="filter-collapse">
+                <button class="btn btn-link d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#filter-collapse" aria-expanded="true" aria-controls="filter-collapse">
                     <i class="fas fa-filter"></i>
                 </button>
             </h5>
-            <div class="collapse d-lg-block" id="filter-collapse">
+            <div class="collapse show d-lg-block filter-collapse-mobile" id="filter-collapse">
                 <form id="filter-form" method="get">
                     {{ filter.form.category|as_crispy_field }}
                     {{ filter.form.city|as_crispy_field }}
@@ -72,4 +72,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<style>
+@media (max-width: 991.98px) {
+    .filter-collapse-mobile.collapsing {
+        height: auto !important;
+        transition: none !important;
+    }
+
+    .filter-collapse-mobile.collapse:not(.show) {
+        display: none !important;
+    }
+}
+</style>
 {% endblock %}
