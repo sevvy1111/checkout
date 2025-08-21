@@ -168,6 +168,7 @@ body {
 
 /* Filter Sidebar */
 .filter-sidebar {
+    max-width: 350px;
     position: sticky;
     top: 80px;
     height: calc(100vh - 100px);
@@ -563,51 +564,60 @@ body {
     outline: none;
 }
 
+
 /*
  * =============================================
  * Media Queries for Responsiveness
  * =============================================
  */
 @media (max-width: 576px) {
-  .dropdown-menu {
-    position: static !important;
-    float: none;
-    width: 100%;
-    margin-top: 0.5rem;
-    border-radius: 0.25rem;
-  }
+    .dropdown-menu {
+        position: static !important;
+        float: none;
+        width: 100%;
+        margin-top: 0.5rem;
+        border-radius: 0.25rem;
+    }
 
-  .dropdown-item {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
+    .dropdown-item {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
 
-  .navbar .icon-badge > .badge {
-    position: relative;
-    top: auto;
-    left: auto;
-    transform: none;
-    margin-left: 0.25rem;
-    font-size: 0.75rem;
-  }
+    .navbar .icon-badge > .badge {
+        position: relative;
+        top: auto;
+        left: auto;
+        transform: none;
+        margin-left: 0.25rem;
+        font-size: 0.75rem;
+    }
 
-  .navbar-nav {
-    text-align: center;
-  }
+    .navbar-nav {
+        text-align: center;
+    }
 
-  .navbar-nav .nav-item {
-    width: 100%;
-    margin-bottom: 0.5rem;
-  }
+    .navbar-nav .nav-item {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
 
-  .navbar-nav .nav-link {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
+    .navbar-nav .nav-link {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 
-  .search-suggestions-container {
-    width: 100%;
-  }
+    .search-suggestions-container {
+        width: 100%;
+    }
 
+    @media (min-width: 992px) {
+        .filter-sidebar-scrollable {
+            max-height: 80vh; /* Adjust this value as needed */
+            overflow-y: auto;
+        }
+
+
+    }
 }
