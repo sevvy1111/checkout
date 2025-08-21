@@ -160,6 +160,8 @@
     background-color: var(--white-color);
     padding: 20px;
     border-radius: 2px;
+    max-height: fit-content;
+    height: auto !important;
 }
 .listing-profile-price {
     font-size: 14px;
