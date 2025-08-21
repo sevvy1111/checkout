@@ -52,7 +52,7 @@
                 <form method="post" action="{% url 'accounts:update_order_status' order_id=order.id %}" class="d-inline-flex align-items-center">
                     {% csrf_token %}
                     {{ forms|get_item:order.id }}
-                    <button type="submit" class="btn btn-sm btn-primary ms-2">Update Status</button>
+                    <button type="submit" class="btn btn-sm btn-primary ms-2">Update</button>
                 </form>
             </div>
         </div>
