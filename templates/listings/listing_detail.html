@@ -7,7 +7,7 @@
 {% block content %}
 <div class="container my-5">
     <div class="row">
-        <div class="col-lg-8">
+        <div class="col-lg-6">
             <div class="card mb-4 shadow-sm">
                 {% if listing.images.all %}
                 <div id="listingCarousel" class="carousel slide listing-detail-carousel" data-bs-ride="carousel">
@@ -32,7 +32,18 @@
                     <span>No Image Available</span>
                 </div>
                 {% endif %}
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card mb-4 shadow-sm">
                 <div class="card-body">
+                    {% if user.is_authenticated and user == listing.seller %}
+                        <div class="d-grid gap-2 mb-3">
+                            <a href="{% url 'listings:listing_update' pk=listing.pk %}" class="btn btn-secondary w-100">Edit Listing</a>
+                            <a href="{% url 'listings:listing_delete' pk=listing.pk %}" class="btn btn-danger w-100">Delete Listing</a>
+                        </div>
+                    {% endif %}
+
                     <div class="d-flex justify-content-between align-items-start">
                         <h1 class="listing-title listing-title--detail">{{ listing.title }}</h1>
                         {% if user.is_authenticated and user != listing.seller %}
@@ -42,135 +53,111 @@
                         {% endif %}
                     </div>
                     <h2 class="card-subtitle mb-2 text-primary fw-bold">₱{{ listing.price|philippine_currency }}</h2>
-                    <p class="card-text" style="white-space: pre-wrap;">{{ listing.description }}</p>
-                    <small class="text-muted">
-                        Listed by: <a href="{% url 'accounts:public_profile' username=listing.seller.username %}" class="link-dark">{{ listing.seller.get_full_name }}</a> on {{ listing.created|date:"F j, Y" }}
-                    </small>
+                    {% if listing.description|wordcount > 30 %}
+                        <p class="card-text mb-1" style="white-space: pre-wrap;">{{ listing.description|truncatewords:30 }}</p>
+                        <div class="collapse" id="descriptionCollapse">
+                            <p class="card-text" style="white-space: pre-wrap;">{{ listing.description|slice:"30:" }}</p>
+                        </div>
+                        <button class="btn btn-link p-0" type="button" data-bs-toggle="collapse" data-bs-target="#descriptionCollapse" aria-expanded="false" aria-controls="descriptionCollapse">
+                           <small>Read More</small>
+                        </button>
+                    {% else %}
+                        <p class="card-text" style="white-space: pre-wrap;">{{ listing.description }}</p>
+                    {% endif %}
+                    <div class="d-flex align-items-center mb-3 text-muted">
+                        <a href="{% url 'accounts:public_profile' username=listing.seller.username %}" class="d-flex align-items-center me-3 link-dark">
+                            <img src="{{ listing.seller.profile.display_avatar_url }}" alt="{{ listing.seller.username }}'s avatar" class="rounded-circle me-1" width="30" height="30">
+                            <small>{{ listing.seller.get_full_name }}</small>
+                        </a>
+                        <small class="d-flex align-items-center me-3">
+                            <i class="fas fa-tag me-1"></i>
+                            <span>{{ listing.category.name }}</span>
+                        </small>
+                        <small class="d-flex align-items-center">
+                            <i class="fas fa-map-marker-alt me-1"></i>
+                            <span>{{ listing.city }}</span>
+                        </small>
+                    </div>
+                    <hr>
+                    <div class="d-grid gap-2">
+                        {% if user.is_authenticated %}
+                            {% if user == listing.seller %}
+                                <p class="text-muted text-center">You are the seller of this listing.</p>
+                            {% else %}
+                                {% if listing.status == 'available' and listing.stock > 0 %}
+                                    <p class="text-success fw-bold mb-0">In Stock: {{ listing.stock }}</p>
+                                    <a href="{% url 'listings:add_to_cart' pk=listing.pk %}" class="btn btn-success btn-lg">Add to Cart</a>
+                                {% else %}
+                                    <p class="text-danger fw-bold mb-0">Out of Stock</p>
+                                    <button class="btn btn-secondary btn-lg" disabled>Out of Stock</button>
+                                {% endif %}
+                                <a href="{% url 'messaging:send_message' recipient_username=listing.seller.username %}?listing={{ listing.pk }}" class="btn btn-warning">Message Seller</a>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-muted text-center">
+                                You must be logged in to purchase or message the seller.
+                            </p>
+                            <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-primary btn-lg w-100 mt-2">Login to Purchase</a>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
             <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">Reviews ({{ reviews.count }})</h5>
-                    <div class="mb-4">
-                        {% if user.is_authenticated and not has_reviewed and user != listing.seller %}
-                            <h6 class="mb-3">Leave a Review</h6>
-                            <form method="post">
-                                {% csrf_token %}
-                                {{ review_form|crispy }}
-                                <button type="submit" class="btn btn-primary">Submit Review</button>
-                            </form>
-                        {% elif has_reviewed %}
-                            <div class="alert alert-info" role="alert">
-                                You have already reviewed this listing.
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    {% for review in reviews %}
-                        <div class="d-flex mb-3 border-bottom pb-3">
-                            <a href="{% url 'accounts:public_profile' username=review.author.username %}">
-                                <img src="{{ review.author.profile.display_avatar_url }}" alt="{{ review.author.username }}" class="rounded-circle me-3" width="50" height="50">
-                            </a>
-                            <div>
-                                <strong>{{ review.author.get_full_name }}</strong> - <small class="text-muted">{{ review.created_at|timesince }} ago</small>
-                                <div class="text-warning my-1">
-                                    {% for i in "12345" %}
-                                        <i class="fa{% if forloop.counter <= review.rating %}s{% else %}r{% endif %} fa-star"></i>
-                                    {% endfor %}
-                                </div>
-                                <p class="mb-0">{{ review.comment }}</p>
-                            </div>
-                        </div>
-                    {% empty %}
-                        <p class="text-muted">No reviews yet. Be the first to leave one!</p>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-           <div class="card shadow-sm mb-4" style="top: 80px;">
-                <div class="card-body">
-                    <h5 class="card-title border-bottom pb-2 mb-3">About Seller</h5>
-                    <div class="text-center mb-3">
-                        <a href="{% url 'accounts:public_profile' username=listing.seller.username %}">
-                            <img src="{{ listing.seller.profile.display_avatar_url }}" alt="{{ listing.seller.username }}'s avatar" class="profile-avatar-main mb-2">
-                        </a>
-                        <h6>{{ listing.seller.get_full_name }}</h6>
-                        <small class="text-muted">Member since {{ listing.seller.date_joined|date:"Y" }}</small>
-                        {% if seller_average_rating %}
-                        <div class="text-warning mt-1">
-                            <i class="fas fa-star"></i>
-                            <span class="ms-1">{{ seller_average_rating|floatformat:1 }} average rating</span>
-                        </div>
-                        {% else %}
-                        <p class="text-muted mt-1">No seller ratings yet.</p>
-                        {% endif %}
-                    </div>
-                    {% if user.is_authenticated and user != listing.seller %}
-                       <a href="{% url 'messaging:send_message' recipient_username=listing.seller.username %}?listing={{ listing.pk }}" class="btn btn-warning w-100">Message Seller</a>
-                    {% endif %}
-                </div>
-                <div class="card-footer bg-transparent border-top-0">
-                    {% if user.is_authenticated %}
-                        {% if user == listing.seller %}
-                            <a href="{% url 'listings:listing_update' pk=listing.pk %}" class="btn btn-secondary w-100 mb-2">Edit Listing</a>
-                            <a href="{% url 'listings:listing_delete' pk=listing.pk %}" class="btn btn-danger w-100">Delete Listing</a>
-                        {% else %}
-                            {% if listing.status == 'available' and listing.stock > 0 %}
-                                <p class="text-success fw-bold mb-2">In Stock: {{ listing.stock }}</p>
-                                <a href="{% url 'listings:add_to_cart' pk=listing.pk %}" class="btn btn-success btn-lg w-100">Add to Cart</a>
+                <div class="card-header bg-white border-bottom-0 py-3">
+                    <button class="btn btn-link text-dark text-decoration-none d-flex justify-content-between align-items-center w-100 p-0"
+                            type="button" data-bs-toggle="collapse" data-bs-target="#reviewsCollapse" aria-expanded="false" aria-controls="reviewsCollapse">
+                        <h5 class="card-title mb-0">
+                            {% if reviews.count > 0 %}
+                                <i class="fas fa-star text-warning me-1"></i>
+                                <strong class="me-1">{{ listing.average_rating|floatformat:1 }}</strong>
+                                ({{ reviews.count }})
                             {% else %}
-                                <p class="text-danger fw-bold mb-2 text-center">Out of Stock</p>
-                                <button class="btn btn-secondary btn-lg w-100" disabled>Out of Stock</button>
+                                No ratings yet (0)
                             {% endif %}
-                        {% endif %}
-                    {% else %}
-                        <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-primary btn-lg w-100">Login to Purchase</a>
-                    {% endif %}
+                        </h5>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div id="reviewsCollapse" class="collapse">
+                    <div class="card-body">
+                        <div class="mb-4">
+                            {% if user.is_authenticated and not has_reviewed and user != listing.seller %}
+                                <h6 class="mb-3">Leave a Review</h6>
+                                <form method="post">
+                                    {% csrf_token %}
+                                    {{ review_form|crispy }}
+                                    <button type="submit" class="btn btn-primary">Submit Review</button>
+                                </form>
+                            {% elif has_reviewed %}
+                                <div class="alert alert-info" role="alert">
+                                    You have already reviewed this listing.
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        {% for review in reviews %}
+                            <div class="d-flex mb-3 border-bottom pb-3">
+                                <a href="{% url 'accounts:public_profile' username=review.author.username %}">
+                                    <img src="{{ review.author.profile.display_avatar_url }}" alt="{{ review.author.username }}" class="rounded-circle me-3" width="50" height="50">
+                                </a>
+                                <div>
+                                    <strong>{{ review.author.get_full_name }}</strong> - <small class="text-muted">{{ review.created_at|timesince }} ago</small>
+                                    <div class="text-warning my-1">
+                                        {% for i in "12345" %}
+                                            <i class="fa{% if forloop.counter <= review.rating %}s{% else %}r{% endif %} fa-star"></i>
+                                        {% endfor %}
+                                    </div>
+                                    <p class="mb-0">{{ review.comment }}</p>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <p class="text-muted">No reviews yet. Be the first to leave one!</p>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-    <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const saveButton = document.querySelector('.save-button');
-    if (saveButton) {
-        saveButton.addEventListener('click', function(event) {
-            event.preventDefault();
-            const url = this.dataset.url;
-
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrftoken,
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                const icon = this.querySelector('i');
-                if (data.is_saved) {
-                    icon.classList.remove('far');
-                    icon.classList.add('fas', 'text-danger');
-                } else {
-                    icon.classList.remove('fas', 'text-danger');
-                    icon.classList.add('far');
-                }
-            })
-            .catch(error => console.error('Error toggling save state:', error));
-        });
-    }
-});
-</script>
 {% endblock %}

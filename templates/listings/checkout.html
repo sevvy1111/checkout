@@ -8,7 +8,7 @@
 <div class="container my-5">
     <img src="{% static 'images/logo.png' %}"
      alt="CheckoutPH Logo"
-     style="display: block; margin: 0 auto; height: 200px;">
+     style="display: block; margin: 0 auto; height: 70px;">
 
     <div class="row gx-lg-5">
         <div class="col-lg-7">
@@ -36,7 +36,7 @@
                             {{ form.gift_note|as_crispy_field }}
                         </div>
 
-                        <div class="checkout-form-section mb-4">
+                        <div class="checkout-form-section mt-4">
                             <h5 class="mb-3 border-bottom pb-2">2. Payment Method</h5>
                             {{ form.payment_method|as_crispy_field }}
                         </div>
@@ -58,8 +58,8 @@
                         <li class="d-flex justify-content-between align-items-center mb-3">
                             <div class="d-flex align-items-center">
                                 <img src="{{ item.listing.images.first.image.url }}" class="rounded me-3" width="60" height="60" style="object-fit: cover;" alt="{{ item.listing.title }}">
-                                <div>
-                                    <span class="fw-bold listing-cart-title">{{ item.listing.title }}</span><br>
+                                <div class="listing-item-details">
+                                    <span class="fw-bold listing-cart-title">{{ item.listing.title }}</span>
                                     <small class="text-muted">{{ item.quantity }} x ₱{{ item.listing.price|philippine_currency }}</small>
                                 </div>
                             </div>

@@ -77,17 +77,22 @@ class ListingListView(ListView):
         return context
 
 
-
 class ListingDetailView(DetailView):
     model = Listing
     template_name = 'listings/listing_detail.html'
     context_object_name = 'listing'
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('images', 'reviews__author__profile')
+        return super().get_queryset().prefetch_related(
+            'images', 'reviews__author__profile'
+        ).annotate(
+            average_rating=Avg('reviews__rating')
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        # Access the annotated average_rating directly from the object
         context['reviews'] = self.object.reviews.all()
         context['review_form'] = ReviewForm()
 
@@ -332,6 +337,7 @@ def checkout(request):
                         listing=listing,
                         quantity=item.quantity,
                         price=listing.price
+
                     )
                     listing.stock = F('stock') - item.quantity
                     if listing.stock == 0:

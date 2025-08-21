@@ -7,7 +7,7 @@
     <div class="row gx-lg-5">
         <div class="col-lg-4 mb-4 mb-lg-0">
             <div class="profile-info-card text-center">
-                <img src="{% if profile_user.profile.avatar %}{{ profile_user.profile.avatar.url }}{% else %}{% static 'images/default_avatar.svg' %}{% endif %}" class="avatar-lg mb-3" alt="{{ user.username }}'s profile image">
+                <img src="{% if profile_user.profile.avatar %}{{ profile_user.profile.avatar.url }}{% else %}{% static 'images/default_avatar.svg' %}{% endif %}" class="avatar-lg mb-3" style="width: 150px; height: 150px;" alt="{{ user.username }}'s profile image">
                 <h4 class="profile-name">{{ profile_user.get_full_name}}</h4>
               {% if seller_average_rating %}
                 <div class="text-warning my-2">
@@ -32,37 +32,9 @@
         <div class="col-lg-8">
             <h3>Listings by {{profile_user.get_full_name }}</h3>
             <hr>
-            {% if user_listings %}
-            <div class="row row-cols-3 row-cols-md-4 row-cols-lg-6 g-4">
-                {% for listing in user_listings %}
-                <div class="col">
-                    <div class="card h-100 shadow-sm listing-card">
-                        <a href="{{ listing.get_absolute_url }}">
-                            <div class="card-img-top">
-                                {% if listing.images.first %}
-                                <img src="{{ listing.images.first.image.url }}" class="card-img-top" alt="{{ listing.title }}">
-                                {% else %}
-                                <div class="card-img-top">
-                                    <span>No Image</span>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </a>
-                        <div class="card-body">
-                            <div>
-                                <a href="{{ listing.get_absolute_url }}" class="text-decoration-none text-dark">
-                                    <h5 class="listing-title listing-title--profile">{{ listing.title }}</h5>
-                                </a>
-                                <span class="listing-profile-price">₱{{ listing.price|philippine_currency }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
+            <div id="listings-container" class="listing-grid">
+                {% include 'listings/partials/listings_grid.html' with listings=user_listings %}
             </div>
-            {% else %}
-            <p class="text-muted text-center">{{ user.username }} has no listings yet.</p>
-            {% endif %}
         </div>
     </div>
 </div>
