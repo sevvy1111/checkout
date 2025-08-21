@@ -610,5 +610,10 @@ body {
   .search-suggestions-container {
     width: 100%;
   }
+  @media (min-width: 992px) {
+  .filter-sidebar-scrollable {
+    max-height: 80vh; /* Adjust this value as needed */
+    overflow-y: auto;
+  }
 
 }
