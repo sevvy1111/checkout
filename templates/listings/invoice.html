@@ -11,56 +11,78 @@
             <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <div>
-                        <h2>Invoice for Order #{{ order.id }}</h2>
-                        <p class="text-muted mb-0">Date: {{ order.created_at|date:"F j, Y" }}</p>
+                        <h2 class="mb-0">Invoice for Order #{{ order.id }}</h2>
+                        <p class="mb-0">Date: {{ order.created_at|date:"F j, Y" }}</p>
                     </div>
                     <img src="{% static 'images/logo.png' %}" alt="CheckoutPH Logo" class="invoice-logo">
                 </div>
                 <div class="card-body">
-                    <h5 class="card-title">Items You Sold</h5>
-                    <ul class="list-group list-group-flush">
-                        {% for item in order_items %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-center">
-                                {% if item.listing and item.listing.images.first %}
-                                    <img src="{{ item.listing.images.first.image.url }}" class="rounded me-3" width="70" height="70" style="object-fit: cover;" alt="{{ item.listing.title }}">
-                                {% else %}
-                                    <div class="cart-item-image-placeholder me-3" style="width: 70px; height: 70px;">
-                                        <span>No Img</span>
-                                    </div>
-                                {% endif %}
-                                <div>
-                                    <h6 class="my-0">{{ item.listing.title|default:"[Deleted Listing]" }}</h6>
-                                    <small class="text-muted">Quantity: {{ item.quantity }}{% if item.quantity > 1 %} @ ₱{{ item.price|philippine_currency }} each{% endif %}</small>
-                                </div>
-                            </div>
-                            <span>₱{{ item.total_price|philippine_currency }}</span>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                <div class="card-footer">
-                    <div class="row">
+                    <div class="row mb-4">
                         <div class="col-md-6">
-                            <h5>Shipping To:</h5>
-                            <p class="mb-0">{{ order.user.get_full_name }}</p>
+                            <h5>Billed To:</h5>
+                            <p class="mb-0">{{ order.full_name }}</p>
                             <p class="mb-0">{{ order.shipping_address }}</p>
-                            <p class="mb-0">{{ order.city }}, {{ order.postal_code }}</p>
-                            <p class="mb-0">{{ order.country }}</p>
+                            <p class="mb-0">{{ order.shipping_city }}, {{ order.shipping_postal_code }}</p>
                         </div>
                         <div class="col-md-6 text-end">
-                            <h5>Summary</h5>
-                            <ul class="list-unstyled">
+                            <h5>Payment Method:</h5>
+                            <p class="mb-0">{{ order.get_payment_method_display }}</p>
+                        </div>
+                    </div>
+
+                    <h5 class="card-title">Order Details</h5>
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50%;">Item</th>
+                                    <th class="text-center">Quantity</th>
+                                    <th class="text-end">Unit Price</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order_items %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if item.listing and item.listing.images.first %}
+                                                <img src="{{ item.listing.images.first.image.url }}" class="rounded me-3" width="70" height="70" style="object-fit: cover;" alt="{{ item.listing.title }}">
+                                            {% else %}
+                                                <div class="cart-item-image-placeholder me-3" style="width: 70px; height: 70px;">
+                                                    <span>No Img</span>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <h6 class="my-0">{{ item.listing.title|default:"[Deleted Listing]" }}</h6>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">{{ item.quantity }}</td>
+                                    <td class="text-end">₱{{ item.price|philippine_currency }}</td>
+                                    <td class="text-end">₱{{ item.total_price|philippine_currency }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="row justify-content-end">
+                        <div class="col-md-5">
+                            <ul class="list-unstyled mb-0">
                                 <li class="d-flex justify-content-between">
-                                    <span>Your Subtotal:</span>
-                                    <strong>₱{{ subtotal|philippine_currency }}</strong>
+                                    <span>Subtotal:</span>
+                                    <span>₱{{ subtotal|philippine_currency }}</span>
                                 </li>
-                                {% if is_seller_view %}
+                                <li class="d-flex justify-content-between">
+                                    <span>Shipping Fee:</span>
+                                    <span>₱{{ order.shipping_fee|philippine_currency }}</span>
+                                </li>
                                 <li class="d-flex justify-content-between border-top pt-2 mt-2">
-                                    <small class="text-muted">Total Order Value:</small>
-                                    <small class="text-muted">₱{{ order.total_price|philippine_currency }}</small>
+                                    <strong>Total Due:</strong>
+                                    <strong>₱{{ order.total_price|philippine_currency }}</strong>
                                 </li>
-                                {% endif %}
                             </ul>
                         </div>
                     </div>

@@ -3,10 +3,6 @@
 
 {% block title %}Create Listing — CheckoutPH{% endblock %}
 
-{% block extra_head %}
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-{% endblock %}
-
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-lg-10 col-xl-8">
@@ -21,8 +17,6 @@
           </div>
           <div class="card-body">
             {{ form|crispy }}
-            <div id="map" style="height: 300px; margin-top: 20px; border-radius: 8px;"></div>
-            <small class="form-text text-muted">Drag the pin to set the listing's location.</small>
           </div>
         </div>
 
@@ -46,39 +40,38 @@
 {% endblock %}
 
 {% block extra_js %}
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Initialize map, centered on Angeles City, Philippines
-      const map = L.map('map').setView([15.145, 120.589], 13);
+      // --- DEFENSIVE PRICE FORMATTING LOGIC ---
+      const listingForm = document.getElementById('listing-form');
+      const priceInput = document.getElementById('id_price');
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      }).addTo(map);
+      function formatPrice(value) {
+        if (!value) return '';
+        const rawValue = value.replace(/[^0-9.]/g, '');
+        const [integerPart, decimalPart] = rawValue.split('.');
 
-      // Get form fields
-      const latField = document.getElementById('id_latitude');
-      const lonField = document.getElementById('id_longitude');
+        const numberToFormat = integerPart === '' ? 0 : integerPart;
+        const formattedInteger = new Intl.NumberFormat('en-US').format(numberToFormat);
 
-      // Add a marker
-      let marker = L.marker(map.getCenter(), {
-        draggable: true
-      }).addTo(map);
-
-      // Set initial form values
-      if (latField.value && lonField.value) {
-          marker.setLatLng([latField.value, lonField.value]);
-          map.setView([latField.value, lonField.value], 13);
-      } else {
-          latField.value = marker.getLatLng().lat.toFixed(6);
-          lonField.value = marker.getLatLng().lng.toFixed(6);
+        if (decimalPart !== undefined) {
+          return rawValue.endsWith('.') ? formattedInteger + '.' : formattedInteger + '.' + decimalPart;
+        }
+        return formattedInteger;
       }
 
-      // Update form fields when marker is dragged
-      marker.on('dragend', function(event) {
-        const position = marker.getLatLng();
-        latField.value = position.lat.toFixed(6);
-        lonField.value = position.lng.toFixed(6);
+      priceInput.addEventListener('input', () => {
+        try {
+            const originalValue = priceInput.value;
+            const formattedValue = formatPrice(originalValue);
+            priceInput.value = formattedValue;
+        } catch (error) {
+            console.error("Error formatting price:", error);
+        }
+      });
+
+      listingForm.addEventListener('submit', () => {
+        priceInput.value = priceInput.value.replace(/,/g, '');
       });
     });
   </script>

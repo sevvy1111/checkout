@@ -13,7 +13,6 @@ class Profile(models.Model):
     avatar = CloudinaryField('avatar', blank=True, null=True)
     bio = models.TextField(blank=True)
 
-    # Stores the 10-digit number (e.g., 9691668709)
     phone_validator = RegexValidator(
         regex=r'^\d{10}$',
         message="Phone number must be 10 digits, e.g., 9171234567."

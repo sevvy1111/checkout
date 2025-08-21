@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Listing Not Found{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <h1 class="display-4">Listing Has Been Deleted</h1>
+            <p class="lead">The listing you are looking for is no longer available.</p>
+            <hr class="my-4">
+            <p>It may have been sold or removed by the seller.</p>
+            <a class="btn btn-primary btn-lg" href="{% url 'listings:listing_list' %}" role="button">Explore Other Listings</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

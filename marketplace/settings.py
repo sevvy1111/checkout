@@ -10,20 +10,15 @@ from datetime import timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
 try:
     with open('secret_key.txt') as f:
         SECRET_KEY = f.read().strip()
 except FileNotFoundError:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'default-django-secret-key-for-local-development')
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 if DEBUG:
@@ -32,10 +27,10 @@ else:
     ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'checkoutph.onrender.com').split(',')
 
 
-# Application definition
+
 
 INSTALLED_APPS = [
-    'daphne', # Must be first
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -98,7 +93,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'marketplace.wsgi.application'
 ASGI_APPLICATION = 'marketplace.asgi.application'
 
-# FIX: Added Channel Layers configuration for real-time support
 if 'REDIS_URL' in os.environ:
     CHANNEL_LAYERS = {
         "default": {
@@ -109,7 +103,6 @@ if 'REDIS_URL' in os.environ:
         },
     }
 else:
-    # Basic in-memory channel layer for local development if Redis is not available
     CHANNEL_LAYERS = {
         "default": {
             "BACKEND": "channels.layers.InMemoryChannelLayer"

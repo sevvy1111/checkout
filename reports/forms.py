@@ -16,9 +16,6 @@ class UserReportForm(forms.ModelForm):
         }
 
     def clean_reported_username(self):
-        """
-        Validate that the user being reported actually exists.
-        """
         username = self.cleaned_data.get('reported_username')
         try:
             User.objects.get(username=username)

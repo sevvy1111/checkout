@@ -27,34 +27,35 @@ class ListingListView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related('seller').prefetch_related('images').with_avg_rating()
-        self.filterset = ListingFilter(self.request.GET, queryset=queryset)
-        return self.filterset.qs.order_by('-created')
+
+        base_queryset = super().get_queryset().select_related('seller').prefetch_related(
+            'images').with_avg_rating().order_by()
+
+
+        self.filterset = ListingFilter(self.request.GET, queryset=base_queryset)
+
+
+        return self.filterset.qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['filter'] = self.filterset
 
-        # --- THIS BLOCK IS THE FIX ---
         page_title = "Find Deals"
         search_query = self.request.GET.get('q')
         category_param = self.request.GET.get('category')
         city_name = self.request.GET.get('city')
         category = None
 
-        # Try to find the category, whether by ID or by Name
         if category_param:
             try:
-                # First, try to treat it as a numerical ID
                 category = Category.objects.get(pk=int(category_param))
             except (ValueError, TypeError, Category.DoesNotExist):
-                # If that fails, try to treat it as a name (case-insensitive)
                 try:
                     category = Category.objects.get(name__iexact=category_param)
                 except Category.DoesNotExist:
                     category = None
 
-        # Now, build the title with the correct priority
         if search_query:
             page_title = f"Search Results for '{search_query}'"
         elif category:
@@ -66,7 +67,6 @@ class ListingListView(ListView):
             page_title = f"Deals in {city_name.title()}"
 
         context['page_title'] = page_title
-        # --- END OF FIX ---
 
         if self.request.user.is_authenticated:
             context['saved_listing_ids'] = SavedItem.objects.filter(
@@ -91,8 +91,6 @@ class ListingDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        # Access the annotated average_rating directly from the object
         context['reviews'] = self.object.reviews.all()
         context['review_form'] = ReviewForm()
 
@@ -146,6 +144,11 @@ class ListingCreateView(LoginRequiredMixin, CreateView):
     model = Listing
     form_class = ListingForm
     template_name = 'listings/listing_create.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = Category.objects.all()
+        return context
 
     def get_success_url(self):
         return reverse('listings:listing_detail', kwargs={'pk': self.object.pk})
@@ -290,6 +293,7 @@ def remove_from_cart(request, pk):
     messages.info(request, f"'{listing_title}' was removed from your cart.")
     return redirect('listings:view_cart')
 
+
 @login_required
 def remove_from_saved(request, pk):
     saved_item = get_object_or_404(SavedItem, pk=pk, user=request.user)
@@ -391,7 +395,6 @@ def update_cart_item(request, pk):
         except (ValueError, TypeError):
             messages.error(request, "Invalid quantity provided.")
 
-
     return redirect('listings:view_cart')
 
 
@@ -445,10 +448,8 @@ def view_invoice(request, pk):
     if not (is_buyer or is_seller):
         return HttpResponseForbidden("You are not allowed to view this invoice.")
 
-
     seller_items = order.items.filter(listing__seller=request.user).select_related('listing').prefetch_related(
         'listing__images')
-
 
     seller_subtotal = sum(item.total_price for item in seller_items)
 

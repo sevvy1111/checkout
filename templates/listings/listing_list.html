@@ -4,81 +4,105 @@
 
 {% block main_container_classes %}container page-content my-4{% endblock %}
 
-{% block content %}
-<div class="row">
-    <aside class="col-lg-3">
-        <div class="filter-sidebar card p-3 d-none d-lg-block">
-            <h5 class="mb-3">Filters</h5>
-            <form id="filter-form" method="get">
-                {{ filter.form.category|as_crispy_field }}
-                {{ filter.form.city|as_crispy_field }}
-                <button type="submit" class="btn btn-primary w-100 mt-3">Apply Filters</button>
-            </form>
-        </div>
+{% block extra_head %}
+<style>
 
-        <div class="d-lg-none mb-3">
-            <h5 class="d-flex justify-content-between align-items-center mb-3">
-                <span>Filters</span>
-                <button class="btn btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#filter-collapse" aria-expanded="false" aria-controls="filter-collapse">
-                    <i class="fas fa-filter text-warning"></i>
-                </button>
-            </h5>
-            <div class="collapse" id="filter-collapse">
-                <form id="filter-form-mobile" method="get">
-                    {{ filter.form.category|as_crispy_field }}
-                    {{ filter.form.city|as_crispy_field }}
-                    <button type="submit" class="btn btn-primary w-100 mt-3">Apply Filters</button>
-                </form>
+.filter-inputs-scrollable {
+    flex-grow: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 1rem;
+    margin-bottom: -1rem;
+}
+
+
+.filter-inputs-scrollable::-webkit-scrollbar {
+    display: none;
+}
+
+.filter-inputs-scrollable .form-control,
+.filter-inputs-scrollable .form-select {
+    min-width: 150px;
+}
+</style>
+{% endblock %}
+
+
+{% block content %}
+<form id="filter-form" method="get" class="d-flex align-items-center gap-3 mb-4">
+    <input type="hidden" name="q" value="{{ request.GET.q|default:'' }}">
+
+    <div class="filter-inputs-scrollable">
+        <div class="d-flex align-items-center gap-2">
+            {{ filter.form.ordering }}
+            {{ filter.form.category }}
+            {{ filter.form.city }}
+            {{ filter.form.condition }}
+            <div class="d-flex align-items-center gap-2 border rounded p-2 bg-light">
+                <span class="text-muted small">Price:</span>
+                {{ filter.form.min_price }}
+                <span>-</span>
+                {{ filter.form.max_price }}
             </div>
         </div>
-    </aside>
+    </div>
 
-    <section class="col-12 col-lg-9">
-        <h2 class="mb-3">{{ page_title }}</h2>
-        <div id="listings-container" class="listing-grid">
-            {% include 'listings/partials/listings_grid.html' with listings=listings %}
-        </div>
-    </section>
-</div>
+    <button type="submit" class="btn btn-primary">Apply</button>
+</form>
+
+<section>
+    <h2 class="mb-3">{{ page_title }}</h2>
+    <div id="listings-container" class="listing-grid">
+        {% include 'listings/partials/listings_grid.html' with listings=listings %}
+    </div>
+</section>
+
 {% endblock %}
+
 
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const listingsContainer = document.getElementById('listings-container');
+    const csrftoken = '{{ csrf_token }}';
 
     listingsContainer.addEventListener('click', function(event) {
-        const saveButton = event.target.closest('.save-button');
-        if (saveButton) {
-            event.preventDefault();
-            const url = saveButton.dataset.url;
-
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrftoken,
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                const icon = saveButton.querySelector('i');
-                if (data.is_saved) {
-                    icon.classList.remove('far');
-                    icon.classList.add('fas', 'text-danger');
-                } else {
-                    icon.classList.remove('fas', 'text-danger');
-                    icon.classList.add('far');
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        }
     });
+    const priceInputs = document.querySelectorAll('input[name="min_price"], input[name="max_price"]');
+    const filterForm = document.getElementById('filter-form');
+
+    function formatPrice(value) {
+        if (!value) return '';
+        const rawValue = value.replace(/[^0-9.]/g, '');
+        const [integerPart, decimalPart] = rawValue.split('.');
+        const numberToFormat = integerPart === '' ? 0 : integerPart;
+        const formattedInteger = new Intl.NumberFormat('en-US').format(numberToFormat);
+
+        if (decimalPart !== undefined) {
+            return rawValue.endsWith('.') ? formattedInteger + '.' : formattedInteger + '.' + decimalPart;
+        }
+        if (rawValue === '') return '';
+        return formattedInteger;
+    }
+
+    priceInputs.forEach(input => {
+        input.addEventListener('input', () => {
+            input.value = formatPrice(input.value);
+        });
+    });
+
+    if(filterForm) {
+        filterForm.addEventListener('submit', () => {
+            filterForm.querySelectorAll('input[name="min_price"], input[name="max_price"]').forEach(input => {
+                if (input.value) {
+                    input.value = input.value.replace(/,/g, '');
+                }
+            });
+        });
+    }
 });
 </script>
 {% endblock %}

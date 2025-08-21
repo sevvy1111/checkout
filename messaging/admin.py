@@ -9,7 +9,7 @@ class MessageInline(admin.TabularInline):
 
 @admin.register(Conversation)
 class ConversationAdmin(admin.ModelAdmin):
-    list_display = ('id', 'last_message_time') # Corrected: Replaced old fields with last_message_time
+    list_display = ('id', 'last_message_time')
     search_fields = ('id', 'participants__username')
     filter_horizontal = ('participants',)
     inlines = [MessageInline]

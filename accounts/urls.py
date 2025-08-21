@@ -12,6 +12,5 @@ urlpatterns = [
     path('purchases/', views.order_history, name='order_history'),
     path('sales/', views.seller_orders, name='seller_orders'),
     path('user/<str:username>/', views.PublicProfileDetailView.as_view(), name='public_profile'),
-    # FIX: Added the URL pattern for updating order status
     path('sales/update_status/<int:order_id>/', views.update_order_status, name='update_order_status'),
 ]

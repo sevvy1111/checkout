@@ -4,28 +4,107 @@
 
 {% block title %}{{ listing.title }}{% endblock %}
 
+{% block extra_head %}
+<style>
+    .main-image-container img {
+        width: 100%;
+        height: auto;
+        max-height: 500px;
+        object-fit: cover;
+        border-radius: .25rem;
+        cursor: pointer;
+    }
+
+    .thumbnail-strip {
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+    }
+
+    .thumbnail-item img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        cursor: pointer;
+        border: 2px solid transparent;
+        border-radius: .25rem;
+        transition: border-color 0.2s ease-in-out;
+    }
+    .thumbnail-item img.active,
+    .thumbnail-item img:hover {
+        border-color: var(--bs-primary);
+    }
+
+    .cart-item-image-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 400px;
+        background-color: #f8f9fa;
+        border: 1px dashed #dee2e6;
+        border-radius: .25rem;
+        color: #6c757d;
+    }
+
+    .fullscreen-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.85);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1050;
+        cursor: pointer;
+    }
+    .fullscreen-overlay img {
+        max-width: 90%;
+        max-height: 90%;
+        object-fit: contain;
+        cursor: default;
+    }
+    .fullscreen-overlay .close-btn {
+        position: absolute;
+        top: 20px;
+        right: 35px;
+        color: #fff;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+
 {% block content %}
 <div class="container my-5">
     <div class="row">
         <div class="col-lg-6">
             <div class="card mb-4 shadow-sm">
                 {% if listing.images.all %}
-                <div id="listingCarousel" class="carousel slide listing-detail-carousel" data-bs-ride="carousel">
-                    <div class="carousel-inner">
+                <div class="thumbnail-gallery p-3">
+                    <div class="main-image-container mb-3">
+                        <img src="{{ listing.images.first.image.url }}"
+                             id="mainListingImage"
+                             alt="{{ listing.images.first.caption|default:listing.title }}">
+                    </div>
+
+                    {% if listing.images.count > 1 %}
+                    <div class="thumbnail-strip">
                         {% for image in listing.images.all %}
-                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                            <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ image.caption|default:listing.title }}">
+                        <div class="thumbnail-item">
+                            <img src="{{ image.image.url }}"
+                                 class="{% if forloop.first %}active{% endif %}"
+                                 alt="{{ image.caption|default:listing.title }}"
+                                 data-main-src="{{ image.image.url }}">
                         </div>
                         {% endfor %}
                     </div>
-                    <button class="carousel-control-prev" type="button" data-bs-target="#listingCarousel" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Previous</span>
-                    </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#listingCarousel" data-bs-slide="next">
-                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Next</span>
-                    </button>
+                    {% endif %}
                 </div>
                 {% else %}
                 <div class="cart-item-image-placeholder">
@@ -131,7 +210,7 @@
                                 </form>
                             {% elif has_reviewed %}
                                 <div class="alert alert-info" role="alert">
-                                    You have already reviewed this listing.
+                                    You have only reviewed this listing.
                                 </div>
                             {% endif %}
                         </div>
@@ -160,4 +239,76 @@
         </div>
     </div>
 </div>
+
+<div id="fullscreen-overlay" class="fullscreen-overlay">
+    <span class="close-btn">&times;</span>
+    <img id="fullscreen-image" src="" alt="Fullscreen Image">
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const mainImage = document.getElementById('mainListingImage');
+    const thumbnails = document.querySelectorAll('.thumbnail-item img');
+    if (mainImage && thumbnails.length > 0) {
+        thumbnails.forEach(thumbnail => {
+            thumbnail.addEventListener('click', function () {
+                mainImage.src = this.dataset.mainSrc;
+                mainImage.alt = this.alt;
+                document.querySelector('.thumbnail-item img.active').classList.remove('active');
+                this.classList.add('active');
+            });
+        });
+    }
+
+    const saveButton = document.querySelector('.save-button');
+    if (saveButton) {
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        saveButton.addEventListener('click', function (event) {
+            event.preventDefault();
+            const url = this.dataset.url;
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrftoken, 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const icon = this.querySelector('i');
+                if (data.is_saved) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas', 'text-danger');
+                } else {
+                    icon.classList.remove('fas', 'text-danger');
+                    icon.classList.add('far');
+                }
+            })
+            .catch(error => console.error('Error toggling save state:', error));
+        });
+    }
+
+    const fullscreenOverlay = document.getElementById('fullscreen-overlay');
+    const fullscreenImage = document.getElementById('fullscreen-image');
+    const closeBtn = document.querySelector('.close-btn');
+
+    if (mainImage) {
+        mainImage.addEventListener('click', function() {
+            fullscreenImage.src = this.src;
+            fullscreenOverlay.style.display = 'flex';
+        });
+    }
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+            fullscreenOverlay.style.display = 'none';
+        });
+    }
+    if (fullscreenOverlay) {
+        fullscreenOverlay.addEventListener('click', function(event) {
+            if (event.target === fullscreenOverlay) {
+                this.style.display = 'none';
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

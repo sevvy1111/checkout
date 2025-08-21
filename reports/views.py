@@ -17,7 +17,6 @@ def create_user_report(request):
             reported_username = form.cleaned_data.get('reported_username')
             reported_user = User.objects.get(username=reported_username)
 
-            # Prevent users from reporting themselves
             if reported_user == request.user:
                 messages.error(request, "You cannot report yourself.")
             else:
@@ -26,7 +25,6 @@ def create_user_report(request):
                 report.reported_user = reported_user
                 report.save()
 
-                # The confirmation message
                 first_name = request.user.first_name or request.user.username
                 messages.success(request,
                                  f"Thanks, {first_name}. We have received your report and will review it shortly.")

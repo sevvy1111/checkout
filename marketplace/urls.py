@@ -12,18 +12,12 @@ api_urlpatterns = [
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-
-    # API endpoints
     path('api/', include(api_urlpatterns)),
-
-    # Main apps
     path('', include('listings.urls', namespace='listings')),
     path('accounts/', include(('accounts.urls', 'accounts'), namespace='accounts')),
     path('messages/', include(('messaging.urls', 'messaging'), namespace='messaging')),
     path('notifications/', include('notifications.urls', namespace='notifications')),
 
-    # --- Corrected Authentication URLs ---
-    # We explicitly define the paths here to point to our custom template locations.
     path(
         'accounts/login/',
         auth_views.LoginView.as_view(template_name='accounts/login.html'),

@@ -7,6 +7,5 @@ class ListingsConfig(AppConfig):
     name = "listings"
 
     def ready(self):
-        # Import signals and template tags here to avoid AppRegistryNotReady error
         import listings.signals
         import listings.templatetags.listings_tags

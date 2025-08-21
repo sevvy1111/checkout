@@ -19,5 +19,4 @@ def read_and_redirect(request, notification_id):
     if notification.link:
         return redirect(notification.link)
 
-    # Fallback if there's no link
     return redirect('notifications:all')

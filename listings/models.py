@@ -12,10 +12,18 @@ User = get_user_model()
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=100, unique=True)
+    parent = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        related_name='children',
+        on_delete=models.CASCADE
+    )
 
     class Meta:
         verbose_name_plural = "Categories"
         ordering = ['name']
+        ordering = ['parent__name', 'name']
 
     def __str__(self):
         return self.name
@@ -32,6 +40,10 @@ class Listing(models.Model):
         ("sold", "Sold"),
         ("hidden", "Hidden"),
     )
+    CONDITION_CHOICES = (
+        ("NEW", "New"),
+        ("USED", "Used"),
+    )
 
     seller = models.ForeignKey(User, related_name="listings", on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
@@ -45,7 +57,7 @@ class Listing(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="available")
     featured = models.BooleanField(default=False)
     stock = models.PositiveIntegerField(default=1)
-
+    condition = models.CharField(max_length=4, choices=CONDITION_CHOICES, default="USED")
     objects = ListingQuerySet.as_manager()
 
     class Meta:
@@ -151,12 +163,9 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
-    # Storing listing details at the time of purchase is crucial for historical accuracy,
-    # especially if the original listing is deleted or its price changes.
-    # For a production system, consider denormalizing further by also storing title and image.
     listing = models.ForeignKey(Listing, on_delete=models.SET_NULL, null=True, related_name='order_items')
     quantity = models.PositiveIntegerField()
-    price = models.DecimalField(max_digits=12, decimal_places=2) # Price per item at time of order
+    price = models.DecimalField(max_digits=12, decimal_places=2)
 
     @property
     def total_price(self):

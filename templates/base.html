@@ -159,9 +159,8 @@
   }
   const csrftoken = getCookie('csrftoken');
 
-  // Main DOMContentLoaded event listener
+
   document.addEventListener('DOMContentLoaded', function() {
-    // --- THEME TOGGLE LOGIC ---
     const themeToggleButton = document.getElementById('theme-toggle-btn');
     const themeToggleIcon = document.getElementById('theme-toggle-icon');
     const body = document.body;
@@ -192,7 +191,7 @@
         themeToggleButton.addEventListener('click', toggleTheme);
     }
 
-    // --- SEARCH SUGGESTIONS LOGIC ---
+
     const searchInput = document.getElementById('navbar-search-input');
     const suggestionsBox = document.getElementById('search-suggestions');
     const searchCollapse = new bootstrap.Collapse(document.getElementById('searchCollapse'), { toggle: false });
@@ -201,18 +200,16 @@
 
     let debounceTimer;
 
-    // Search bar visibility toggle logic
     if (searchToggleButton && searchCollapse) {
       searchToggleButton.addEventListener('click', () => {
         searchCollapse.show();
-        setTimeout(() => searchInput.focus(), 300); // Focus after collapse animation
+        setTimeout(() => searchInput.focus(), 300);
       });
       searchCloseButton.addEventListener('click', () => {
         searchCollapse.hide();
       });
     }
 
-    // Search suggestions logic
     if (searchInput) {
         searchInput.addEventListener('keyup', function() {
             const query = this.value;
@@ -263,7 +260,7 @@
         document.addEventListener('click', function(e) {
             if (!searchInput.contains(e.target) && !searchToggleButton.contains(e.target)) {
                 suggestionsBox.innerHTML = '';
-                if (window.innerWidth < 992) { // Hide search bar on small screens if user clicks away
+                if (window.innerWidth < 992) {
                     searchCollapse.hide();
                 }
                 suggestionsBox.classList.add('d-none');
@@ -271,7 +268,6 @@
         });
     }
 
-    // --- NOTIFICATION DROPDOWN INIT ---
     const notificationDropdownElement = document.getElementById('notificationDropdown');
     if (notificationDropdownElement) {
         new bootstrap.Dropdown(notificationDropdownElement);

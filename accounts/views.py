@@ -81,12 +81,11 @@ def seller_orders(request):
     return render(request, 'accounts/seller_orders.html', context)
 
 
-# FIX: Added a new view to handle the status update logic
+
 @login_required
 def update_order_status(request, order_id):
     order = get_object_or_404(Order, id=order_id)
 
-    # Security check: Ensure at least one item in this order belongs to the current user
     if not order.items.filter(listing__seller=request.user).exists():
         messages.error(request, "You do not have permission to modify this order.")
         return redirect('accounts:seller_orders')
@@ -97,7 +96,6 @@ def update_order_status(request, order_id):
             form.save()
             messages.success(request, f"Order #{order.id} status has been updated.")
 
-            # Notify the buyer of the status update
             Notification.objects.create(
                 recipient=order.user,
                 message=f"The status of your order #{order.id} has been updated to '{order.get_status_display()}'.",

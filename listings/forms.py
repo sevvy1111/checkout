@@ -1,16 +1,13 @@
 # listings/forms.py
 from django import forms
 from .models import Listing, Review, Order, Category
-from .filters import PHILIPPINE_CITIES
+
 
 class ListingForm(forms.ModelForm):
-    city = forms.ChoiceField(
-        choices=PHILIPPINE_CITIES,
-        required=True,
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
+    # Only allow selecting categories that do not have children (leaf nodes)
+    # The ordering makes the dropdown much more intuitive
     category = forms.ModelChoiceField(
-        queryset=Category.objects.all(),
+        queryset=Category.objects.filter(children__isnull=True).order_by('parent__name', 'name'),
         required=True,
         empty_label="Select a Category",
         widget=forms.Select(attrs={'class': 'form-select'})
@@ -19,14 +16,16 @@ class ListingForm(forms.ModelForm):
     class Meta:
         model = Listing
         fields = [
-            'title', 'description', 'price', 'category', 'city',
+            'title', 'description', 'price', 'condition', 'category', 'city',
             'status', 'featured', 'latitude', 'longitude', 'stock'
         ]
         widgets = {
+            'price': forms.TextInput(attrs={'placeholder': 'e.g., 1500.00', 'inputmode': 'decimal'}),
             'description': forms.Textarea(attrs={'rows': 5}),
             'latitude': forms.HiddenInput(),
             'longitude': forms.HiddenInput(),
         }
+
 
 class ReviewForm(forms.ModelForm):
     class Meta:
@@ -36,6 +35,7 @@ class ReviewForm(forms.ModelForm):
             'rating': forms.Select(attrs={'class': 'form-select'}),
             'comment': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Write your review here...'}),
         }
+
 
 class OrderForm(forms.ModelForm):
     PAYMENT_CHOICES = [('COD', 'Cash on Delivery')]
@@ -53,7 +53,7 @@ class OrderForm(forms.ModelForm):
             'gift_note': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Optional: Add a personal gift note'}),
         }
 
-# FIX: Created a new form for updating order status, bound to the Order model.
+
 class OrderStatusForm(forms.ModelForm):
     class Meta:
         model = Order

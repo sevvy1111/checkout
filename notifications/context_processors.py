@@ -4,7 +4,6 @@ from .models import Notification
 def notifications_context(request):
     if request.user.is_authenticated:
         unread_count = request.user.notifications.filter(is_read=False).count()
-        # Fetch the 5 most recent notifications for the dropdown
         recent_notifications = request.user.notifications.all()[:5]
         return {
             'unread_notification_count': unread_count,

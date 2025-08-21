@@ -7,5 +7,4 @@ class MessagingConfig(AppConfig):
     name = 'messaging'
 
     def ready(self):
-        # This line should be removed
         pass

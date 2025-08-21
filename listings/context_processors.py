@@ -12,7 +12,4 @@ def cart_item_count(request):
     return {'cart_item_count': 0}
 
 def search_filter_context(request):
-    """
-    Makes the ListingFilter available on all pages for the navbar search.
-    """
     return {'search_filter_form': ListingFilter(request.GET, queryset=None)}

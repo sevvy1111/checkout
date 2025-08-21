@@ -14,7 +14,6 @@
                 </div>
                 <div class="card-body">
                     <div id="chat-log">
-                        {# Chat messages will be appended here by JavaScript #}
                     </div>
                 </div>
                 <div class="card-footer">
@@ -80,7 +79,6 @@
                 appendMessage(data);
             };
 
-            // Handle clicking on suggestion links
             chatLog.addEventListener('click', function(e) {
                 if (e.target.classList.contains('chat-suggestion')) {
                     e.preventDefault();
@@ -107,8 +105,6 @@
                 bubbleDiv.classList.add('bubble');
                 bubbleDiv.innerHTML = data.message;
 
-                // --- THIS IS THE FIX ---
-                // We check `data.sender` for the value 'user' instead of comparing usernames.
                 const isUserMessage = data.sender === 'user';
 
                 if (isUserMessage) {
@@ -119,7 +115,7 @@
 
                 messageDiv.appendChild(bubbleDiv);
                 chatLog.appendChild(messageDiv);
-                chatLog.scrollTop = chatLog.scrollHeight; // Auto-scroll to the bottom
+                chatLog.scrollTop = chatLog.scrollHeight;
             }
         });
     </script>

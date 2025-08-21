@@ -14,7 +14,6 @@ class OrderAdmin(admin.ModelAdmin):
     list_filter = ('status', 'created_at')
     search_fields = ('user__username', 'full_name')
 
-# Register other models for better admin visibility
 admin.site.register(ListingImage)
 admin.site.register(SavedItem)
 admin.site.register(Cart)

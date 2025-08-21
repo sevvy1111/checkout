@@ -1,16 +1,16 @@
-# messaging/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q, Count, Max
+from django.db.models import Q, Count
 from .models import Conversation, Message
 from .forms import MessageForm
 from django.contrib.auth import get_user_model
 from django.contrib import messages
 from listings.models import Listing
-from django.http import HttpResponseForbidden
 from django.urls import reverse
+from urllib.parse import urlencode
+
 
 User = get_user_model()
 
@@ -21,7 +21,6 @@ class InboxView(LoginRequiredMixin, ListView):
     context_object_name = 'conversations'
 
     def get_queryset(self):
-        # Annotate each conversation with the count of unread messages for the current user
         return Conversation.objects.filter(
             participants=self.request.user
         ).annotate(
@@ -51,22 +50,25 @@ class ConversationDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         conversation = self.get_object()
 
+        if self.request.user not in conversation.participants.all():
+            raise PermissionDenied("You do not have access to this conversation.")
+
         other_user = conversation.get_other_user(self.request.user)
         context['other_user'] = other_user
 
-        # Get initial message from URL parameter if it exists
         initial_message = ''
         listing_id = self.request.GET.get('listing')
-        if listing_id:
+        if listing_id and not conversation.messages.exists():
             try:
                 listing = Listing.objects.get(id=listing_id)
-                initial_message = f"Hi, I'm interested in your listing: '{listing.title}'. Can you tell me more about it? ({self.request.build_absolute_uri(listing.get_absolute_url)})"
-                messages.info(self.request, "This message has been pre-populated with details about the listing.")
+                listing_url = self.request.build_absolute_uri(listing.get_absolute_url())
+                initial_message = f"Hi, I'm interested in your listing: '{listing.title}'.\n\n{listing_url}"
             except Listing.DoesNotExist:
-                pass  # Fall back to a blank message if the listing doesn't exist
+                pass
 
         context['form'] = MessageForm(initial={'content': initial_message})
-        # Mark messages as read upon opening the conversation
+
+        # Mark messages as read
         conversation.messages.filter(receiver=self.request.user, is_read=False).update(is_read=True)
         return context
 
@@ -89,21 +91,24 @@ class ConversationDetailView(LoginRequiredMixin, DetailView):
 @login_required
 def send_message_view(request, recipient_username):
     recipient = get_object_or_404(User, username=recipient_username)
+
     if request.user == recipient:
-        messages.error(request, "You cannot send a message to yourself.")
+        messages.error(request, "You cannot start a conversation with yourself.")
         return redirect('listings:listing_list')
 
-    # Find an existing conversation
-    conversation = Conversation.objects.filter(
-        participants=request.user
-    ).filter(
-        participants=recipient
-    ).first()
+    conversation = Conversation.objects.get_or_create_conversation(
+        request.user,
+        recipient
+    )
 
-    # If a conversation exists, redirect to it
-    if conversation:
-        return redirect('messaging:conversation_detail', pk=conversation.pk)
+    redirect_url = reverse(
+        'messaging:conversation_detail',
+        kwargs={'pk': conversation.pk}
+    )
 
-    # If no conversation exists, redirect to the inbox and inform the user
-    messages.warning(request, "You need to send your first message to this user to start a conversation.")
-    return redirect('messaging:inbox')
+    listing_pk = request.GET.get('listing')
+    if listing_pk:
+        query_params = urlencode({'listing': listing_pk})
+        redirect_url = f"{redirect_url}?{query_params}"
+
+    return redirect(redirect_url)

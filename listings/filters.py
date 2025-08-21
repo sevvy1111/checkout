@@ -1,102 +1,17 @@
 # listings/filters.py
 import django_filters
 from django import forms
+from django.db.models.functions import Sin, Cos, ACos, Radians
+
 from .models import Listing, Category
 
-# A comprehensive list of cities in the Philippines for dropdowns
-PHILIPPINE_CITIES = [
-    ('Alaminos', 'Alaminos'), ('Angeles', 'Angeles'), ('Antipolo', 'Antipolo'), ('Bacolod', 'Bacolod'),
-    ('Bacoor', 'Bacoor'), ('Bago', 'Bago'), ('Baguio', 'Baguio'), ('Bais', 'Bais'), ('Balanga', 'Balanga'),
-    ('Batac', 'Batac'), ('Batangas City', 'Batangas City'), ('Bayawan', 'Bayawan'), ('Baybay', 'Baybay'),
-    ('Bayugan', 'Bayugan'), ('Biñan', 'Biñan'), ('Bislig', 'Bislig'), ('Bogo', 'Bogo'), ('Borongan', 'Borongan'),
-    ('Butuan', 'Butuan'), ('Cabadbaran', 'Cabadbaran'), ('Cabanatuan', 'Cabanatuan'), ('Cabuyao', 'Cabuyao'),
-    ('Cadiz', 'Cadiz'), ('Cagayan de Oro', 'Cagayan de Oro'), ('Calaca', 'Calaca'), ('Calamba', 'Calamba'),
-    ('Calapan', 'Calapan'), ('Calbayog', 'Calbayog'), ('Caloocan', 'Caloocan'), ('Candon', 'Candon'),
-    ('Canlaon', 'Canlaon'), ('Carcar', 'Carcar'), ('Carmona', 'Carmona'), ('Catbalogan', 'Catbalogan'),
-    ('Cauayan', 'Cauayan'), ('Cavite City', 'Cavite City'), ('Cebu City', 'Cebu City'),
-    ('Cotabato City', 'Cotabato City'),
-    ('Dagupan', 'Dagupan'), ('Danao', 'Danao'), ('Dapitan', 'Dapitan'), ('Dasmariñas', 'Dasmariñas'),
-    ('Davao City', 'Davao City'), ('Digos', 'Digos'), ('Dipolog', 'Dipolog'), ('Dumaguete', 'Dumaguete'),
-    ('El Salvador', 'El Salvador'), ('Escalante', 'Escalante'), ('Gapan', 'Gapan'),
-    ('General Santos', 'General Santos'),
-    ('General Trias', 'General Trias'), ('Gingoog', 'Gingoog'), ('Guihulngan', 'Guihulngan'),
-    ('Himamaylan', 'Himamaylan'),
-    ('Ilagan', 'Ilagan'), ('Iligan', 'Iligan'), ('Iloilo City', 'Iloilo City'), ('Imus', 'Imus'), ('Iriga', 'Iriga'),
-    ('Isabela', 'Isabela'), ('Kabankalan', 'Kabankalan'), ('Kidapawan', 'Kidapawan'), ('Koronadal', 'Koronadal'),
-    ('La Carlota', 'La Carlota'), ('Lamitan', 'Lamitan'), ('Laoag', 'Laoag'), ('Lapu-Lapu City', 'Lapu-Lapu City'),
-    ('Las Piñas', 'Las Piñas'), ('Legazpi', 'Legazpi'), ('Ligao', 'Ligao'), ('Lipa', 'Lipa'), ('Lucena', 'Lucena'),
-    ('Maasin', 'Maasin'), ('Mabalacat', 'Mabalacat'), ('Makati', 'Makati'), ('Malabon', 'Malabon'),
-    ('Malaybalay', 'Malaybalay'), ('Malolos', 'Malolos'), ('Mandaue', 'Mandaue'), ('Mandaluyong', 'Mandaluyong'),
-    ('Manila', 'Manila'), ('Marawi', 'Marawi'), ('Marikina', 'Marikina'), ('Masbate City', 'Masbate City'),
-    ('Mati', 'Mati'), ('Meycauayan', 'Meycauayan'), ('Muñoz', 'Muñoz'), ('Muntinlupa', 'Muntinlupa'),
-    ('Naga', 'Naga'), ('Navotas', 'Navotas'), ('Olongapo', 'Olongapo'), ('Ormoc', 'Ormoc'),
-    ('Oroquieta', 'Oroquieta'), ('Ozamiz', 'Ozamiz'), ('Pagadian', 'Pagadian'), ('Palayan', 'Palayan'),
-    ('Panabo', 'Panabo'), ('Parañaque', 'Parañaque'), ('Pasay', 'Pasay'), ('Pasig', 'Pasig'),
-    ('Passi', 'Passi'), ('Puerto Princesa', 'Puerto Princesa'), ('Quezon City', 'Quezon City'), ('Roxas', 'Roxas'),
-    ('Sagay', 'Sagay'), ('Samal', 'Samal'), ('San Carlos', 'San Carlos'), ('San Fernando', 'San Fernando'),
-    ('San Jose', 'San Jose'), ('San Jose del Monte', 'San Jose del Monte'), ('San Juan', 'San Juan'),
-    ('San Pablo', 'San Pablo'), ('San Pedro', 'San Pedro'), ('Santa Rosa', 'Santa Rosa'), ('Santiago', 'Santiago'),
-    ('Silay', 'Silay'), ('Sipalay', 'Sipalay'), ('Sorsogon City', 'Sorsogon City'), ('Surigao City', 'Surigao City'),
-    ('Tabaco', 'Tabaco'), ('Tabuk', 'Tabuk'), ('Tacloban', 'Tacloban'), ('Tacurong', 'Tacurong'),
-    ('Tagaytay', 'Tagaytay'), ('Tagbilaran', 'Tagbilaran'), ('Taguig', 'Taguig'), ('Tagum', 'Tagum'),
-    ('Talisay', 'Talisay'), ('Tanauan', 'Tanauan'), ('Tandag', 'Tandag'), ('Tangub', 'Tangub'),
-    ('Tanjay', 'Tanjay'), ('Tarlac City', 'Tarlac City'), ('Tayabas', 'Tayabas'), ('Toledo', 'Toledo'),
-    ('Trece Martires', 'Trece Martires'), ('Tuguegarao', 'Tuguegarao'), ('Urdaneta', 'Urdaneta'),
-    ('Valencia', 'Valencia'), ('Valenzuela', 'Valenzuela'), ('Victorias', 'Victorias'), ('Vigan', 'Vigan'),
-    ('Zamboanga City', 'Zamboanga City'),
-]
-
-# A comprehensive list of categories for dropdowns
-# This list is now primarily for populating the database via migration.
-# The form/filter will pull directly from the Category model.
-MARKETPLACE_CATEGORIES = [
-    ('Vehicles', (
-        ('Cars, Trucks & Motorcycles', 'Cars, Trucks & Motorcycles'),
-        ('Auto Parts', 'Auto Parts'),
-        ('RVs, Boats & Trailers', 'RVs, Boats & Trailers'),
-    )),
-    ('Property', (
-        ('Housing for Rent', 'Housing for Rent'),
-        ('Housing for Sale', 'Housing for Sale'),
-    )),
-    ('Electronics', (
-        ('Mobile Phones', 'Mobile Phones'),
-        ('Computers & Laptops', 'Computers & Laptops'),
-        ('TVs & Home Entertainment', 'TVs & Home Entertainment'),
-        ('Cameras & Photography', 'Cameras & Photography'),
-        ('Video Games & Consoles', 'Video Games & Consoles'),
-    )),
-    ('Home & Garden', (
-        ('Furniture', 'Furniture'),
-        ('Home Appliances', 'Home Appliances'),
-        ('Garden & Outdoor', 'Garden & Outdoor'),
-        ('Tools & Home Improvement', 'Tools & Home Improvement'),
-    )),
-    ('Clothing, Shoes & Accessories', (
-        ('Women\'s Clothing & Shoes', 'Women\'s Clothing & Shoes'),
-        ('Men\'s Clothing & Shoes', 'Men\'s Clothing & Shoes'),
-        ('Bags & Luggage', 'Bags & Luggage'),
-        ('Jewelry & Watches', 'Jewelry & Watches'),
-    )),
-    ('Family', (
-        ('Baby & Kids', 'Baby & Kids'),
-        ('Pet Supplies', 'Pet Supplies'),
-        ('Health & Beauty', 'Health & Beauty'),
-    )),
-    ('Hobbies & Entertainment', (
-        ('Books, Movies & Music', 'Books, Movies & Music'),
-        ('Sports & Outdoors', 'Sports & Outdoors'),
-        ('Musical Instruments', 'Musical Instruments'),
-        ('Antiques & Collectibles', 'Antiques & Collectibles'),
-        ('Arts & Crafts', 'Arts & Crafts'),
-        ('Toys & Games', 'Toys & Games'),
-    )),
-    # ... (the rest of your categories)
+CONDITION_CHOICES = [
+    ('NEW', 'New'),
+    ('USED', 'Used'),
 ]
 
 
 class ListingFilter(django_filters.FilterSet):
-    # Filter for the listing title using 'icontains' for case-insensitive partial matches
     q = django_filters.CharFilter(
         field_name='title',
         lookup_expr='icontains',
@@ -104,23 +19,73 @@ class ListingFilter(django_filters.FilterSet):
         widget=forms.TextInput(attrs={'placeholder': 'Search by title...'})
     )
 
-    # FIX: Use ModelChoiceFilter to correctly handle the ForeignKey relationship
-    category = django_filters.ModelChoiceFilter(
-        queryset=Category.objects.all(),
-        field_name='category__name',  # Filter based on the name of the category
-        to_field_name='name',       # The value from the form corresponds to the 'name' field
+    category = django_filters.ChoiceFilter(
+        field_name='category__name',
+        lookup_expr='exact',
         label='Category',
-        empty_label='All Categories',
         widget=forms.Select(attrs={'class': 'form-select'})
     )
 
     city = django_filters.ChoiceFilter(
-        choices=PHILIPPINE_CITIES,
         label='City',
-        empty_label='Any City',
+        choices=[],
+        widget=forms.Select
+    )
+
+    min_price = django_filters.NumberFilter(
+        field_name="price", lookup_expr='gte', label="Min Price",
+        widget=forms.TextInput(attrs={'placeholder': '₱ min', 'inputmode': 'decimal'})
+    )
+
+    max_price = django_filters.NumberFilter(
+        field_name="price", lookup_expr='lte', label="Max Price",
+        widget=forms.TextInput(attrs={'placeholder': '₱ max', 'inputmode': 'decimal'})
+    )
+
+    condition = django_filters.ChoiceFilter(
+        choices=CONDITION_CHOICES,
+        label="Condition",
+        empty_label="Any Condition",
         widget=forms.Select(attrs={'class': 'form-select'})
     )
 
+    ordering = django_filters.OrderingFilter(
+        choices=(
+            ('-created', 'Newest First'),
+            ('price', 'Price: Low to High'),
+            ('-price', 'Price: High to Low'),
+        ),
+        label="Sort By",
+        empty_label="Default",
+        widget=forms.Select
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # City choices (unchanged)
+        city_choices = Listing.objects.filter(
+            status='available'
+        ).values_list(
+            'city', 'city'
+        ).distinct().order_by('city')
+        self.filters['city'].extra['choices'] = [('', 'Any City')] + list(city_choices)
+
+        # Dynamically build hierarchical category choices for the dropdown
+        # CORRECTED: Added .order_by('name') to ensure parent categories are alphabetical
+        parent_categories = Category.objects.filter(parent__isnull=True).order_by('name').prefetch_related('children')
+        category_choices = [('', 'All Categories')]
+        for parent in parent_categories:
+            # The children will be ordered by the model's Meta.ordering by default
+            child_choices = [(child.name, child.name) for child in parent.children.all()]
+            if child_choices:
+                category_choices.append((parent.name, child_choices))
+        self.filters['category'].extra['choices'] = category_choices
+
+        # Apply CSS classes
+        self.filters['city'].field.widget.attrs.update({'class': 'form-select'})
+        self.filters['ordering'].field.widget.attrs.update({'class': 'form-select'})
+
     class Meta:
         model = Listing
-        fields = ['category', 'city']
+        fields = []

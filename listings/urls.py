@@ -20,4 +20,5 @@ urlpatterns = [
     path('seller/order/<int:pk>/', views.seller_order_detail, name='seller_order_detail'),
     path('invoice/<int:pk>/', views.view_invoice, name='view_invoice'),
     path('saved/remove/<int:pk>/', views.remove_from_saved, name='remove_from_saved'),
+    path('toggle_save/<int:pk>/', views.toggle_save_listing, name='toggle_save'),
 ]
