@@ -38,7 +38,13 @@
                                     </div>
                                 {% endif %}
                                 <div>
-                                    <h6 class="my-0 listing-title listing-title--orders">{{ item.listing.title|default:"[Deleted Listing]" }}</h6>
+                                   {% if item.listing %}
+                                        <a href="{% url 'listings:listing_detail' pk=item.listing.pk %}" class="fw-bold text-decoration-none text-dark">
+                                            {{ item.listing.title }}
+                                        </a>
+                                    {% else %}
+                                        [Deleted Listing]
+                                    {% endif %}
                                     <small class="text-muted">Quantity: {{ item.quantity }}</small>
                                 </div>
                             </div>
