@@ -159,6 +159,7 @@ class Order(models.Model):
     gift_note = models.TextField(blank=True, null=True)
     payment_method = models.CharField(max_length=50, choices=PAYMENT_CHOICES, default='COD')
     shipping_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    credit_used = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     total_price = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -166,11 +167,15 @@ class Order(models.Model):
         return f"Order #{self.id} by {self.user.username}"
 
     def calculate_total_price(self):
-        """Calculates the total price from items and shipping fee."""
+        """Calculates the total price from items, shipping fee, and applied credit."""
         subtotal = self.items.aggregate(
             total=Sum(F('quantity') * F('price'))
         )['total'] or 0
-        self.total_price = subtotal + self.shipping_fee
+
+        # Ensure total doesn't go below zero after applying credit
+        total_before_credit = subtotal + self.shipping_fee
+        final_total = total_before_credit - self.credit_used
+        self.total_price = max(final_total, 0)
 
     def is_seller(self, user):
         """Check if a user is a seller for any item in this order."""

@@ -1,41 +1,35 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
 
-{% block title %}Create Listing — CheckoutPH{% endblock %}
+{% block title %}Create a New Listing{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-lg-10 col-xl-8">
-    <div class="card p-4 shadow-sm">
-      <h2 class="mb-4 text-center">Create a New Listing</h2>
-      <form method="post" enctype="multipart/form-data" id="listing-form">
-        {% csrf_token %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h4 class="mb-0">Create Listing</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="listing-form">
+                        {% csrf_token %}
+                        {{ form|crispy }}
 
-        <div class="card mb-4">
-          <div class="card-header">
-            <h5>Listing Details</h5>
-          </div>
-          <div class="card-body">
-            {{ form|crispy }}
-          </div>
-        </div>
+                        <div class="mb-3">
+                            <label for="id_images" class="form-label"><strong>Upload Images</strong></label>
+                            <input type="file" name="images" id="id_images" class="form-control" multiple accept="image/*">
+                            <small class="form-text text-muted">You can upload multiple images. Only image files are accepted.</small>
+                        </div>
 
-        <div class="card mb-4">
-          <div class="card-header">
-            <h5>Upload Images</h5>
-            <small class="text-muted">You can upload up to 6 images.</small>
-          </div>
-          <div class="card-body">
-            <input type="file" name="images" id="id_images" class="form-control" multiple>
-          </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">Create Listing</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-
-        <div class="d-grid gap-2 mt-4">
-          <button type="submit" class="btn btn-primary btn-lg">Create Listing</button>
-        </div>
-      </form>
     </div>
-  </div>
 </div>
 {% endblock %}
 

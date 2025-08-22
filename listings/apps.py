@@ -9,3 +9,4 @@ class ListingsConfig(AppConfig):
     def ready(self):
         import listings.signals
         import listings.templatetags.listings_tags
+        import listings.signals

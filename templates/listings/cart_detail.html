@@ -1,92 +1,92 @@
 {% extends "base.html" %}
-{% load static %}
 {% load listings_tags %}
 
-{% block title %}Your Shopping Cart{% endblock %}
+{% block title %}Shopping Cart{% endblock %}
 
 {% block extra_head %}
 <style>
-    .quantity-input-wrapper {
+    .quantity-input-group {
         display: flex;
         align-items: center;
     }
-    .quantity-input-wrapper .btn {
-        padding: 0.375rem 0.75rem;
-    }
-    .quantity-input-wrapper .form-control {
+    .quantity-input {
+        width: 50px;
         text-align: center;
         border-left: 0;
         border-right: 0;
+    }
+    .quantity-btn {
         border-radius: 0;
     }
-    .cart-item-image-placeholder {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 120px;
-        height: 120px;
-        background-color: #f8f9fa;
-        border: 1px dashed #dee2e6;
-        border-radius: .25rem;
-        color: #6c757d;
+    .cart-item-image-wrapper {
+        position: relative;
+        width: 100%;
+        padding-top: 100%; /* 1:1 Aspect Ratio */
+        overflow: hidden;
+        border-radius: 0.25rem;
     }
-    .cart-item-image {
-        width: 120px;
-        height: 120px;
+    .cart-item-image-wrapper img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
         object-fit: cover;
     }
 </style>
 {% endblock %}
 
+
 {% block content %}
 <div class="container my-5">
+    <h1 class="mb-4">Shopping Cart</h1>
+
     <div class="row">
         <div class="col-lg-8">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-white py-3">
-                    <h4 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Shopping Cart ({{ cart.items.count|default:0 }} items)</h4>
-                </div>
+            <div class="card shadow-sm" id="cart-items-container">
                 <div class="card-body">
                     {% if cart_items %}
                         {% for item in cart_items %}
-                            <div class="row mb-4 border-bottom pb-3 align-items-center">
-                                <div class="col-md-3">
+                        <div class="row mb-4 align-items-center" id="cart-item-{{ item.pk }}">
+                            <div class="col-md-2">
+                                <div class="cart-item-image-wrapper">
                                     <a href="{{ item.listing.get_absolute_url }}">
                                         {% if item.listing.images.first %}
-                                            <img src="{{ item.listing.images.first.image.url }}" class="img-fluid rounded cart-item-image" alt="{{ item.listing.title }}">
+                                            <img src="{{ item.listing.images.first.image.url }}" alt="{{ item.listing.title }}">
                                         {% else %}
-                                            <div class="cart-item-image-placeholder">
-                                                <span>No Image</span>
-                                            </div>
+                                            <div class="cart-item-image-placeholder"><span>No Image</span></div>
                                         {% endif %}
                                     </a>
                                 </div>
-                                <div class="col-md-9">
-                                    <div class="d-flex justify-content-between">
-                                        <div>
-                                            <h5><a href="{{ item.listing.get_absolute_url }}" class="text-dark text-decoration-none">{{ item.listing.title }}</a></h5>
-                                            <p class="mb-2 text-muted small">Sold by: <a href="{% url 'accounts:public_profile' username=item.listing.seller.username %}">{{ item.listing.seller.username }}</a></p>
-                                            <p class="mb-1 fw-bold fs-5">₱{{ item.listing.price|philippine_currency }}</p>
-                                        </div>
-                                        <div>
-                                            <a href="{% url 'listings:remove_from_cart' pk=item.pk %}" class="btn btn-sm btn-outline-danger" title="Remove item">&times;</a>
-                                        </div>
-                                    </div>
-                                    <p class="mb-1 text-muted">Total: <strong class="item-total-price">₱{{ item.total_price|philippine_currency }}</strong></p>
-                                    <form method="post" action="{% url 'listings:update_cart_item' pk=item.pk %}" class="d-flex align-items-center mt-2 quantity-form">
-                                        {% csrf_token %} <div class="quantity-input-wrapper input-group input-group-sm" style="width: 120px;">
-                                            <button class="btn btn-outline-secondary quantity-btn" type="button" data-action="decrease">-</button>
-                                            <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.listing.stock }}" class="form-control quantity-input">
-                                            <button class="btn btn-outline-secondary quantity-btn" type="button" data-action="increase">+</button>
-                                        </div>
-                                    </form>
-                                </div>
                             </div>
+                            <div class="col-md-4">
+                                <h5 class="mb-1"><a href="{{ item.listing.get_absolute_url }}" class="text-dark text-decoration-none">{{ item.listing.title }}</a></h5>
+                                <small class="text-muted">Price: ₱{{ item.listing.price|philippine_currency }}</small>
+                            </div>
+                            <div class="col-md-3">
+                                <form action="{% url 'listings:update_cart_item' pk=item.pk %}" method="post" class="update-cart-form">
+                                    {% csrf_token %}
+                                    <div class="input-group quantity-input-group">
+                                        <button class="btn btn-outline-secondary quantity-btn quantity-minus" type="button" data-item-id="{{ item.pk }}">-</button>
+                                        <input type="number" name="quantity" class="form-control quantity-input" value="{{ item.quantity }}" min="1" max="{{ item.listing.stock }}" data-item-id="{{ item.pk }}">
+                                        <button class="btn btn-outline-secondary quantity-btn quantity-plus" type="button" data-item-id="{{ item.pk }}">+</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <span class="fw-bold" id="item-total-{{ item.pk }}">₱{{ item.total_price|philippine_currency }}</span>
+                            </div>
+                            <div class="col-md-1 text-end">
+                                <a href="{% url 'listings:remove_from_cart' pk=item.pk %}" class="btn btn-sm btn-outline-danger" title="Remove item">&times;</a>
+                            </div>
+                        </div>
+                        {% if not forloop.last %}<hr>{% endif %}
                         {% endfor %}
                     {% else %}
                         <div class="text-center py-5">
-                            <p class="lead">Your cart is empty.</p>
-                            <a href="{% url 'listings:listing_list' %}" class="btn btn-primary">Continue Shopping</a>
+                            <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                            <h4 class="mb-3">Your cart is empty</h4>
+                            <p class="text-muted">Looks like you haven't added anything to your cart yet.</p>
                         </div>
                     {% endif %}
                 </div>
@@ -94,35 +94,35 @@
         </div>
         <div class="col-lg-4">
             <div class="card shadow-sm">
-                <div class="card-header bg-white py-3">
-                    <h4 class="mb-0">Order Summary</h4>
-                </div>
                 <div class="card-body">
+                    <h4 class="mb-3">Order Summary</h4>
                     <ul class="list-group list-group-flush">
-                        <li class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 pb-0">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
                             Subtotal
-                            <span id="subtotal-price">₱{{ subtotal|philippine_currency }}</span>
+                            <span id="summary-subtotal">₱{{ subtotal|philippine_currency }}</span>
                         </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
-                            Shipping
-                            <span>₱{{ 75.00|philippine_currency }}</span>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            Shipping Fee
+                            <span>₱{{ shipping_fee|philippine_currency }}</span>
                         </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 mb-3">
-                            <div>
-                                <strong>Grand Total</strong>
-                            </div>
-                            <span id="grand-total-price"><strong>₱{{ grand_total|philippine_currency }}</strong></span>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 border-0">
+                            <strong>Grand Total</strong>
+                            <strong id="summary-grand-total">₱{{ grand_total|philippine_currency }}</strong>
                         </li>
                     </ul>
-                    {% if cart_items %}
-                    <a href="{% url 'listings:checkout' %}" class="btn btn-primary btn-lg w-100">
-                        Proceed to Checkout
-                    </a>
-                    {% else %}
-                    <button class="btn btn-primary btn-lg w-100" disabled>
-                        Proceed to Checkout
-                    </button>
-                    {% endif %}
+
+                    <div class="d-grid gap-2 mt-4">
+                        {% if cart_items %}
+                            <a href="{% url 'listings:checkout' %}" class="btn btn-primary btn-lg {% if cart.has_out_of_stock_items %}disabled{% endif %}">Proceed to Checkout</a>
+                        {% else %}
+                             <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" title="Your cart is empty.">
+                                <a href="#" class="btn btn-primary btn-lg disabled" role="button" aria-disabled="true">Proceed to Checkout</a>
+                            </span>
+                        {% endif %}
+                        <a href="{% url 'listings:listing_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Continue Shopping
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -133,64 +133,121 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.quantity-form').forEach(form => {
-        const input = form.querySelector('.quantity-input');
-        const decreaseBtn = form.querySelector('[data-action="decrease"]');
-        const increaseBtn = form.querySelector('[data-action="increase"]');
-        const itemTotalPriceElement = form.closest('.row').querySelector('.item-total-price');
+    const cartContainer = document.getElementById('cart-items-container');
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        const url = form.action;
-        let timeout = null;
+    // --- FIX: Centralized currency formatting function ---
+    const formatCurrency = (value) => {
+        return '₱' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
 
-        const updateCart = (quantity) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                const formData = new FormData();
-                formData.append('quantity', quantity);
-                fetch(url, {
-                    method: 'POST',
-                    headers: { 'X-CSRFToken': csrftoken },
-                    body: formData,
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        itemTotalPriceElement.textContent = `₱${data.item_total_price.toFixed(2)}`;
-                        document.getElementById('subtotal-price').textContent = `₱${data.subtotal.toFixed(2)}`;
-                        document.getElementById('grand-total-price').textContent = `₱${data.grand_total.toFixed(2)}`;
-                    } else {
-                        // Handle errors or messages from the server
-                        console.error('Update failed:', data.error);
-                    }
-                })
-                .catch(error => console.error('Error updating cart:', error));
-            }, 500); // Debounce form submission
-        };
+    const updateCartSummary = (subtotal, grandTotal) => {
+        document.getElementById('summary-subtotal').textContent = formatCurrency(subtotal);
+        document.getElementById('summary-grand-total').textContent = formatCurrency(grandTotal);
+    };
 
-        input.addEventListener('input', () => {
-            let currentValue = parseInt(input.value, 10);
-            if (!isNaN(currentValue) && currentValue >= 1 && currentValue <= parseInt(input.max, 10)) {
-                updateCart(currentValue);
+    const updateCart = (itemId, newQuantity) => {
+        const url = `/update_cart_item/${itemId}/`;
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrftoken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: `quantity=${newQuantity}`
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Network response was not ok: ${response.statusText}`);
             }
-        });
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                const itemTotalEl = document.getElementById(`item-total-${itemId}`);
+                if (itemTotalEl) {
+                    // FIX: Use the new formatting function
+                    itemTotalEl.textContent = formatCurrency(data.item_total);
+                }
 
-        decreaseBtn.addEventListener('click', () => {
-            let currentValue = parseInt(input.value, 10);
-            if (currentValue > 1) {
-                input.value = currentValue - 1;
-                updateCart(input.value);
-            }
-        });
+                // FIX: Pass raw numbers to the summary update function
+                updateCartSummary(data.subtotal, data.grand_total);
 
-        increaseBtn.addEventListener('click', () => {
-            let currentValue = parseInt(input.value, 10);
-            if (currentValue < parseInt(input.max, 10)) {
-                input.value = currentValue + 1;
-                updateCart(input.value);
+                if (data.item_removed) {
+                    document.getElementById(`cart-item-${itemId}`).remove();
+                }
+
+                if (data.cart_empty) {
+                    location.reload();
+                }
+
+            } else {
+                console.error('Error updating cart:', data.error);
+                location.reload();
             }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            location.reload();
         });
+    };
+
+    // ... (rest of the JavaScript remains the same) ...
+
+    cartContainer.addEventListener('click', function(event) {
+        const target = event.target;
+
+        if (target.matches('.quantity-plus') || target.matches('.quantity-minus')) {
+            const itemId = target.dataset.itemId;
+            const input = document.querySelector(`.quantity-input[data-item-id="${itemId}"]`);
+            if (!input) return;
+
+            let currentQuantity = parseInt(input.value, 10);
+            const maxQuantity = parseInt(input.max, 10);
+
+            if (target.matches('.quantity-plus')) {
+                if (currentQuantity < maxQuantity) currentQuantity++;
+            } else {
+                if (currentQuantity > 1) currentQuantity--;
+            }
+            input.value = currentQuantity;
+            updateCart(itemId, currentQuantity);
+        }
     });
+
+    let debounceTimer;
+    cartContainer.addEventListener('input', function(event) {
+        if (event.target.matches('.quantity-input')) {
+            clearTimeout(debounceTimer);
+            const input = event.target;
+            const itemId = input.dataset.itemId;
+            let newQuantity = parseInt(input.value, 10);
+            const maxQuantity = parseInt(input.max, 10);
+
+            if (isNaN(newQuantity) || newQuantity < 1) newQuantity = 1;
+            if (newQuantity > maxQuantity) newQuantity = maxQuantity;
+
+            input.value = newQuantity;
+
+            debounceTimer = setTimeout(() => {
+                updateCart(itemId, newQuantity);
+            }, 500);
+        }
+    });
+
+    cartContainer.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter' && event.target.matches('.quantity-input')) {
+            event.preventDefault();
+            event.target.blur();
+        }
+    });
+
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
 });
 </script>
 {% endblock %}

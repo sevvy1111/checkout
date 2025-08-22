@@ -2,7 +2,7 @@
     <div class="card-header">
         <strong>Dashboard Menu</strong>
     </div>
-    <div class="list-group list-group-flush">
+    <div class="list-group list-group-flush dashboard-nav">
         <a href="{% url 'accounts:dashboard' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
             <i class="fas fa-th-list fa-fw me-2"></i> My Listings
         </a>
@@ -14,6 +14,9 @@
         </a>
         <a href="{% url 'accounts:saved_listings' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'saved_listings' %}active{% endif %}">
             <i class="fas fa-heart fa-fw me-2"></i> Wishlist
+        </a>
+        <a href="{% url 'accounts:profile' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+            <i class="fas fa-user-circle fa-fw me-2"></i> My Profile
         </a>
     </div>
 </div>

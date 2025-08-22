@@ -10,6 +10,11 @@ from listings.forms import OrderStatusForm
 from listings.models import Listing, SavedItem, Order
 from notifications.models import Notification
 
+# Import Coalesce and Value for the database query fix
+from django.db.models import Value
+from django.db.models.functions import Coalesce
+from decimal import Decimal
+
 User = get_user_model()
 
 
@@ -63,7 +68,17 @@ def saved_listings(request):
 
 @login_required
 def order_history(request):
-    orders = Order.objects.filter(user=request.user).prefetch_related('items__listing').order_by('-created_at')
+    """
+    Displays the user's purchase history, safely handling potential NULL values
+    in decimal fields for older orders.
+    """
+    orders = Order.objects.filter(user=request.user).annotate(
+        # If any of these fields are NULL in the DB, replace them with 0.00
+        total_price_clean=Coalesce('total_price', Value(Decimal('0.00'))),
+        shipping_fee_clean=Coalesce('shipping_fee', Value(Decimal('0.00'))),
+        credit_used_clean=Coalesce('credit_used', Value(Decimal('0.00')))
+    ).prefetch_related('items__listing').order_by('-created_at')
+
     return render(request, 'accounts/order_history.html', {'orders': orders})
 
 
@@ -84,7 +99,6 @@ def seller_orders(request):
 def update_order_status(request, order_id):
     order = get_object_or_404(Order, id=order_id)
 
-    # Use the centralized model method for the permission check
     if not order.is_seller(request.user):
         messages.error(request, "You do not have permission to modify this order.")
         return redirect('accounts:seller_orders')
@@ -95,12 +109,17 @@ def update_order_status(request, order_id):
             form.save()
             messages.success(request, f"Order #{order.id} status has been updated.")
 
-            # Notify the buyer about the status update
+            message = f"The status of your order #{order.id} has been updated to '{order.get_status_display()}'."
+            link = reverse('accounts:order_history')
+
+            if order.status == 'delivered':
+                message = f"Your order #{order.id} has been delivered! Leave a review for your items to earn credits."
+
             Notification.objects.create(
                 recipient=order.user,
-                message=f"The status of your order #{order.id} has been updated to '{order.get_status_display()}'.",
+                message=message,
                 notification_type='order_status_update',
-                link=reverse('accounts:order_history')
+                link=link
             )
 
     return redirect('accounts:seller_orders')
@@ -118,7 +137,6 @@ class PublicProfileDetailView(DetailView):
         user = self.get_object()
         context['user_listings'] = Listing.objects.filter(seller=user, status='available').order_by('-created')
 
-        # Add a list of saved listing IDs for the current authenticated user
         if self.request.user.is_authenticated:
             context['saved_listing_ids'] = SavedItem.objects.filter(
                 user=self.request.user
@@ -126,7 +144,17 @@ class PublicProfileDetailView(DetailView):
         else:
             context['saved_listing_ids'] = []
 
-        # Refactored: Use the efficient method from the profile model
         context['seller_average_rating'] = user.profile.get_seller_average_rating()
-
         return context
+
+    class OrderHistoryView(Listing):
+        model = Order
+        template_name = 'accounts/order_history.html'
+        context_object_name = 'orders'
+
+        def get_queryset(self):
+            return (
+                Order.objects.filter(user=self.request.user)
+                .prefetch_related('items__listing__images')
+                .order_by('-created_at')
+            )

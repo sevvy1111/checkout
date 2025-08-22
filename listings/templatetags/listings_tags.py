@@ -35,3 +35,15 @@ def get_item(dictionary, key):
     Usage: {{ my_dict|get_item:my_key }}
     """
     return dictionary.get(key)
+@register.filter(name='order_status_badge')
+def order_status_badge(status):
+    """
+    Returns a Bootstrap badge class based on the order status.
+    """
+    status_map = {
+        'pending': 'warning',
+        'shipped': 'info',
+        'delivered': 'success',
+        'cancelled': 'danger',
+    }
+    return status_map.get(status, 'secondary')

@@ -376,9 +376,15 @@ def view_cart(request):
     subtotal = sum(item.total_price for item in cart_items)
     shipping_fee = decimal.Decimal('75.00')
     grand_total = subtotal + shipping_fee
-    return render(request, 'listings/cart_detail.html',
-                  {'cart_items': cart_items, 'subtotal': subtotal, 'grand_total': grand_total, 'cart': cart})
 
+    context = {
+        'cart_items': cart_items,
+        'subtotal': subtotal,
+        'shipping_fee': shipping_fee,
+        'grand_total': grand_total,
+        'cart': cart
+    }
+    return render(request, 'listings/cart_detail.html', context)
 
 @login_required
 def remove_from_cart(request, pk):
@@ -423,6 +429,7 @@ def checkout(request):
     shipping_fee = decimal.Decimal('75.00')
     subtotal = sum(item.total_price for item in cart_items)
     grand_total = subtotal + shipping_fee
+    credit_balance = request.user.profile.credit_balance
 
     if request.method == 'POST':
         form = OrderForm(request.POST)
@@ -432,7 +439,19 @@ def checkout(request):
                     order = form.save(commit=False)
                     order.user = request.user
                     order.shipping_fee = shipping_fee
-                    order.total_price = grand_total
+
+                    credit_to_use = decimal.Decimal('0.00')
+                    if form.cleaned_data.get('use_credits') and credit_balance > 0:
+                        credit_to_use = min(credit_balance, grand_total)
+                        order.credit_used = credit_to_use
+
+                        profile = request.user.profile
+                        profile.credit_balance -= credit_to_use
+                        profile.save(update_fields=['credit_balance'])
+
+                    final_total = grand_total - credit_to_use
+                    order.total_price = max(final_total, 0)
+
                     order.save()
 
                     listing_ids = [item.listing.id for item in cart_items]
@@ -452,7 +471,7 @@ def checkout(request):
                             OrderItem(
                                 order=order,
                                 listing=listing,
-                                product_title=listing.title,  # Denormalize title
+                                product_title=listing.title,
                                 quantity=item.quantity,
                                 price=listing.price
                             )
@@ -464,7 +483,6 @@ def checkout(request):
                     OrderItem.objects.bulk_create(order_items_to_create)
                     Listing.objects.bulk_update(listings_for_update, ['stock', 'status'])
 
-                    # Send notifications
                     sellers_to_notify = {item.listing.seller for item in cart_items}
                     for seller in sellers_to_notify:
                         Notification.objects.create(
@@ -492,7 +510,8 @@ def checkout(request):
         'form': form,
         'subtotal': subtotal,
         'shipping_fee': shipping_fee,
-        'grand_total': grand_total
+        'grand_total': grand_total,
+        'credit_balance': credit_balance,  # Pass balance to template
     }
     return render(request, 'listings/checkout.html', context)
 
@@ -500,27 +519,50 @@ def checkout(request):
 @login_required
 def update_cart_item(request, pk):
     """
-    Updates the quantity of an item in the cart.
+    Updates the quantity of an item in the cart, handling AJAX requests.
     """
+    cart_item = get_object_or_404(CartItem, pk=pk, cart__user=request.user)
+
     if request.method == 'POST':
-        cart_item = get_object_or_404(CartItem, pk=pk, cart__user=request.user)
         try:
             new_quantity = int(request.POST.get('quantity'))
+            item_removed = False
 
             with transaction.atomic():
                 item_to_update = CartItem.objects.select_for_update().select_related('listing').get(pk=pk)
                 listing_stock = item_to_update.listing.stock
 
                 if new_quantity <= 0:
-                    messages.info(request, f"'{item_to_update.listing.title}' was removed from your cart.")
                     item_to_update.delete()
+                    item_removed = True
                 elif new_quantity <= listing_stock:
                     item_to_update.quantity = new_quantity
                     item_to_update.save()
                 else:
-                    messages.error(request,
-                                   f"Cannot update quantity. Only {listing_stock} units are available for '{item_to_update.listing.title}'.")
+                    item_to_update.quantity = listing_stock
+                    item_to_update.save()
+                    messages.error(request, f"Not enough stock. Quantity set to {listing_stock}.")
+
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                cart = Cart.objects.get(user=request.user)
+                cart_items = cart.items.all()
+                subtotal = sum(item.total_price for item in cart_items)
+                shipping_fee = decimal.Decimal('75.00')
+                grand_total = subtotal + shipping_fee
+
+                return JsonResponse({
+                    'status': 'success',
+                    'item_removed': item_removed,
+                    # FIX: Return raw numbers, not formatted strings
+                    'item_total': float(item_to_update.total_price if not item_removed else 0),
+                    'subtotal': float(subtotal),
+                    'grand_total': float(grand_total),
+                    'cart_empty': not cart_items.exists(),
+                })
+
         except (ValueError, TypeError):
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'error', 'error': 'Invalid quantity.'}, status=400)
             messages.error(request, "Invalid quantity provided.")
 
     return redirect('listings:view_cart')

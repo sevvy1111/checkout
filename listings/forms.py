@@ -53,6 +53,11 @@ class OrderForm(forms.ModelForm):
         widget=forms.RadioSelect,
         initial='COD'
     )
+    use_credits = forms.BooleanField(
+        required=False,
+        label="Use my credit balance",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
 
     class Meta:
         model = Order

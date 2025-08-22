@@ -5,7 +5,7 @@ from django.templatetags.static import static
 from django.core.validators import RegexValidator
 from django.db.models import Avg
 from cloudinary.models import CloudinaryField
-
+from django.urls import reverse
 from listings.models import Review
 
 User = get_user_model()
@@ -15,7 +15,7 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     avatar = CloudinaryField('avatar', blank=True, null=True)
     bio = models.TextField(blank=True)
-
+    credit_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     phone_validator = RegexValidator(
         regex=r'^\d{10}$',
         message="Phone number must be 10 digits, e.g., 9171234567."
@@ -29,6 +29,9 @@ class Profile(models.Model):
 
     def __str__(self):
         return f'{self.user.username} Profile'
+
+    def get_absolute_url(self):
+        return reverse('accounts:public_profile', kwargs={'username': self.user.username})
 
     @property
     def display_avatar_url(self):

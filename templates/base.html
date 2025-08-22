@@ -100,7 +100,6 @@
               <i class="fas fa-user-circle me-1"></i> {{ user.get_full_name|default:user.username }}
             </a>
             <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-              <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">My Profile</a></li>
               <li><a class="dropdown-item" href="{% url 'accounts:dashboard' %}">Dashboard</a></li>
               <li><a class="dropdown-item" href="{% url 'support:chat' %}">Customer Support</a></li>
               <li><hr class="dropdown-divider"></li>
