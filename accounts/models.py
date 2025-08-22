@@ -3,7 +3,10 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.templatetags.static import static
 from django.core.validators import RegexValidator
+from django.db.models import Avg
 from cloudinary.models import CloudinaryField
+
+from listings.models import Review
 
 User = get_user_model()
 
@@ -29,14 +32,18 @@ class Profile(models.Model):
 
     @property
     def display_avatar_url(self):
-
         if self.avatar and hasattr(self.avatar, 'url'):
             return self.avatar.url
         return static('images/default_avatar.svg')
 
     @property
     def full_phone_number(self):
-
         if self.phone:
             return f'+63{self.phone}'
         return ""
+
+    def get_seller_average_rating(self):
+        """Calculates the average rating for all listings sold by the user."""
+        return Review.objects.filter(
+            listing__seller=self.user
+        ).aggregate(Avg('rating'))['rating__avg']

@@ -9,25 +9,25 @@ import cloudinary.api
 from datetime import timedelta
 from dotenv import load_dotenv
 
+# Load environment variables from .env file
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-try:
-    with open('secret_key.txt') as f:
-        SECRET_KEY = f.read().strip()
-except FileNotFoundError:
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'default-django-secret-key-for-local-development')
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    if os.environ.get('DJANGO_SETTINGS_MODULE') == 'marketplace.settings':
+        SECRET_KEY = 'default-django-secret-key-for-local-development'
+    else:
+        raise Exception("SECRET_KEY must be set in the environment.")
 
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 if DEBUG:
-    ALLOWED_HOSTS = ['*', 'localhost']
+    ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 else:
     ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'checkoutph.onrender.com').split(',')
-
-
-
 
 INSTALLED_APPS = [
     'daphne',
@@ -195,8 +195,3 @@ MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 7 * 4 # 4 weeks
 SESSION_SAVE_EVERY_REQUEST = True
-
-# Phone verification
-TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID')
-TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN')
-TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER')

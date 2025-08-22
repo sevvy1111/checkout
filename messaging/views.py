@@ -10,7 +10,7 @@ from django.contrib import messages
 from listings.models import Listing
 from django.urls import reverse
 from urllib.parse import urlencode
-
+from django.http import JsonResponse, HttpResponseBadRequest
 
 User = get_user_model()
 
@@ -75,6 +75,32 @@ class ConversationDetailView(LoginRequiredMixin, DetailView):
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         form = MessageForm(request.POST, request.FILES)
+
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            if form.is_valid():
+                message = form.save(commit=False)
+                message.conversation = self.object
+                message.sender = request.user
+                message.receiver = self.object.get_other_user(request.user)
+                message.save()
+
+                # Update conversation's last message time
+                self.object.last_message_time = message.timestamp
+                self.object.save()
+
+                return JsonResponse({
+                    'status': 'success',
+                    'message': {
+                        'text': message.text,
+                        'image_url': message.image.url if message.image else None,
+                        'timestamp': message.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+                    },
+                    'sender_avatar_url': request.user.profile.display_avatar_url
+                })
+            else:
+                return JsonResponse({'status': 'error', 'message': form.errors}, status=400)
+
+        # Fallback for non-AJAX requests
         if form.is_valid():
             message = form.save(commit=False)
             message.conversation = self.object

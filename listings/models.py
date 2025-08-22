@@ -3,7 +3,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
-from django.db.models import Avg
+from django.db.models import Avg, Sum, F
 from cloudinary.models import CloudinaryField
 
 User = get_user_model()
@@ -22,14 +22,16 @@ class Category(models.Model):
 
     class Meta:
         verbose_name_plural = "Categories"
-        ordering = ['name']
         ordering = ['parent__name', 'name']
 
     def __str__(self):
+        if self.parent:
+            return f"{self.parent.name} -> {self.name}"
         return self.name
 
 
 class ListingQuerySet(models.QuerySet):
+
     def with_avg_rating(self):
         return self.annotate(average_rating=Avg('reviews__rating'))
 
@@ -69,6 +71,10 @@ class Listing(models.Model):
     def get_absolute_url(self):
         return reverse("listings:listing_detail", args=[self.pk])
 
+    def has_sufficient_stock(self, quantity):
+        """Checks if the listing has enough stock for a given quantity."""
+        return self.stock >= quantity
+
 
 class ListingImage(models.Model):
     listing = models.ForeignKey(Listing, related_name="images", on_delete=models.CASCADE)
@@ -94,13 +100,13 @@ class SavedItem(models.Model):
 class Review(models.Model):
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='reviews')
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
+    order_item = models.OneToOneField('OrderItem', on_delete=models.CASCADE, related_name='review', null=True)
     rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)])
     comment = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-created_at']
-        unique_together = ('listing', 'author')
 
     def __str__(self):
         return f"Review by {self.author.username} for {self.listing.title}"
@@ -116,8 +122,8 @@ class Cart(models.Model):
 
     @property
     def has_out_of_stock_items(self):
-
-        return any(item.quantity > item.listing.stock for item in self.items.all())
+        """Checks if any item in the cart exceeds the available stock."""
+        return self.items.filter(quantity__gt=F('listing__stock')).exists()
 
 
 class CartItem(models.Model):
@@ -137,7 +143,6 @@ class Order(models.Model):
     PAYMENT_CHOICES = [
         ('COD', 'Cash on Delivery'),
     ]
-
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('shipped', 'Shipped'),
@@ -154,16 +159,28 @@ class Order(models.Model):
     gift_note = models.TextField(blank=True, null=True)
     payment_method = models.CharField(max_length=50, choices=PAYMENT_CHOICES, default='COD')
     shipping_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    total_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    total_price = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Order #{self.id} by {self.user.username}"
 
+    def calculate_total_price(self):
+        """Calculates the total price from items and shipping fee."""
+        subtotal = self.items.aggregate(
+            total=Sum(F('quantity') * F('price'))
+        )['total'] or 0
+        self.total_price = subtotal + self.shipping_fee
+
+    def is_seller(self, user):
+        """Check if a user is a seller for any item in this order."""
+        return self.items.filter(listing__seller=user).exists()
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     listing = models.ForeignKey(Listing, on_delete=models.SET_NULL, null=True, related_name='order_items')
+    product_title = models.CharField(max_length=200)
     quantity = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=12, decimal_places=2)
 
@@ -171,10 +188,5 @@ class OrderItem(models.Model):
     def total_price(self):
         return self.quantity * self.price
 
-    def get_total_price(self):
-        return self.listing.price * self.quantity if self.listing else 0
-
     def __str__(self):
-        if self.listing:
-            return f"{self.quantity} x {self.listing.title}"
-        return f"{self.quantity} x [Deleted Listing]"
+        return f"{self.quantity} x {self.product_title or '[Deleted Listing]'}"

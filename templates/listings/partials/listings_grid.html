@@ -43,5 +43,42 @@
     </div>
 </div>
 {% empty %}
-<p class="text-center text-muted">No listings found that match your criteria.</p>
+<p class="text-center text-muted">No listings found.</p>
 {% endfor %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Since we are including this partial, we'll re-attach the event listener to all new save buttons.
+        const saveButtons = document.querySelectorAll('.save-button');
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        saveButtons.forEach(button => {
+            button.removeEventListener('click', handleSaveButtonClick); // Prevent double-listening
+            button.addEventListener('click', handleSaveButtonClick);
+        });
+
+        function handleSaveButtonClick(event) {
+            event.preventDefault();
+            const button = event.currentTarget;
+            const url = button.dataset.url;
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrftoken, 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const icon = button.querySelector('i');
+                if (data.is_saved) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas', 'text-danger');
+                } else {
+                    icon.classList.remove('fas', 'text-danger');
+                    icon.classList.add('far');
+                }
+            })
+            .catch(error => console.error('Error toggling save state:', error));
+        }
+    });
+</script>
+{% endblock %}

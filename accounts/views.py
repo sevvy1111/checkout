@@ -5,10 +5,9 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic import DetailView
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from django.db.models import Avg  # Import Avg
 from .forms import UserRegisterForm, UserUpdateForm, ProfileUpdateForm
 from listings.forms import OrderStatusForm
-from listings.models import Listing, SavedItem, Order, OrderItem, Review  # Import Review
+from listings.models import Listing, SavedItem, Order
 from notifications.models import Notification
 
 User = get_user_model()
@@ -81,12 +80,12 @@ def seller_orders(request):
     return render(request, 'accounts/seller_orders.html', context)
 
 
-
 @login_required
 def update_order_status(request, order_id):
     order = get_object_or_404(Order, id=order_id)
 
-    if not order.items.filter(listing__seller=request.user).exists():
+    # Use the centralized model method for the permission check
+    if not order.is_seller(request.user):
         messages.error(request, "You do not have permission to modify this order.")
         return redirect('accounts:seller_orders')
 
@@ -96,6 +95,7 @@ def update_order_status(request, order_id):
             form.save()
             messages.success(request, f"Order #{order.id} status has been updated.")
 
+            # Notify the buyer about the status update
             Notification.objects.create(
                 recipient=order.user,
                 message=f"The status of your order #{order.id} has been updated to '{order.get_status_display()}'.",
@@ -118,7 +118,15 @@ class PublicProfileDetailView(DetailView):
         user = self.get_object()
         context['user_listings'] = Listing.objects.filter(seller=user, status='available').order_by('-created')
 
-        seller_average_rating = Review.objects.filter(listing__seller=user).aggregate(Avg('rating'))['rating__avg']
-        context['seller_average_rating'] = seller_average_rating
+        # Add a list of saved listing IDs for the current authenticated user
+        if self.request.user.is_authenticated:
+            context['saved_listing_ids'] = SavedItem.objects.filter(
+                user=self.request.user
+            ).values_list('listing__id', flat=True)
+        else:
+            context['saved_listing_ids'] = []
+
+        # Refactored: Use the efficient method from the profile model
+        context['seller_average_rating'] = user.profile.get_seller_average_rating()
 
         return context

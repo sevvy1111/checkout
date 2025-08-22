@@ -4,6 +4,9 @@ from .models import Listing, Review, Order, Category
 
 
 class ListingForm(forms.ModelForm):
+    """
+    Form for creating and updating a Listing.
+    """
     # Only allow selecting categories that do not have children (leaf nodes)
     # The ordering makes the dropdown much more intuitive
     category = forms.ModelChoiceField(
@@ -28,6 +31,9 @@ class ListingForm(forms.ModelForm):
 
 
 class ReviewForm(forms.ModelForm):
+    """
+    Form for creating a Review.
+    """
     class Meta:
         model = Review
         fields = ['rating', 'comment']
@@ -38,6 +44,9 @@ class ReviewForm(forms.ModelForm):
 
 
 class OrderForm(forms.ModelForm):
+    """
+    Form for handling the checkout process and creating an Order.
+    """
     PAYMENT_CHOICES = [('COD', 'Cash on Delivery')]
     payment_method = forms.ChoiceField(
         choices=PAYMENT_CHOICES,
@@ -55,6 +64,9 @@ class OrderForm(forms.ModelForm):
 
 
 class OrderStatusForm(forms.ModelForm):
+    """
+    Form for updating an Order's status.
+    """
     class Meta:
         model = Order
         fields = ['status']
