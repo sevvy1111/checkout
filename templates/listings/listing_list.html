@@ -71,28 +71,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
     listingsContainer.addEventListener('click', function(event) {
     });
+
     const priceInputs = document.querySelectorAll('input[name="min_price"], input[name="max_price"]');
     const filterForm = document.getElementById('filter-form');
 
     function formatPrice(value) {
         if (!value) return '';
         const rawValue = value.replace(/[^0-9.]/g, '');
-        const [integerPart, decimalPart] = rawValue.split('.');
-        const numberToFormat = integerPart === '' ? 0 : integerPart;
-        const formattedInteger = new Intl.NumberFormat('en-US').format(numberToFormat);
+        const number = Number(rawValue);
 
-        if (decimalPart !== undefined) {
-            return rawValue.endsWith('.') ? formattedInteger + '.' : formattedInteger + '.' + decimalPart;
+        if (isNaN(number)) return '';
+
+        const formatted = new Intl.NumberFormat('en-US').format(number);
+        if (rawValue.endsWith('.')) {
+            return formatted + '.';
         }
-        if (rawValue === '') return '';
-        return formattedInteger;
+
+        return formatted;
     }
 
-    priceInputs.forEach(input => {
-        input.addEventListener('input', () => {
-            input.value = formatPrice(input.value);
+    if (priceInputs.length > 0) {
+        priceInputs.forEach(input => {
+            input.addEventListener('input', () => {
+                input.value = formatPrice(input.value);
+            });
         });
-    });
+    }
 
     if(filterForm) {
         filterForm.addEventListener('submit', () => {

@@ -25,7 +25,7 @@ if not SECRET_KEY:
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 if DEBUG:
-    ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+    ALLOWED_HOSTS = ['*', 'localhost']
 else:
     ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'checkoutph.onrender.com').split(',')
 
@@ -161,7 +161,7 @@ LOGIN_REDIRECT_URL = 'listings:listing_list'
 
 # Production Security Settings
 if not DEBUG:
-    CSRF_TRUSTED_ORIGINS = ['https://' + host for host in ALLOWED_HOSTS if host != 'localhost']
+    CSRF_TRUSTED_ORIGINS = ['https://' + host for host in ALLOWED_HOSTS]
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_SSL_REDIRECT = True
@@ -193,5 +193,5 @@ REST_FRAMEWORK = {
 
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
-SESSION_COOKIE_AGE = 60 * 60 * 24 * 7 * 4 # 4 weeks
+SESSION_COOKIE_AGE = timedelta(weeks=4).total_seconds()
 SESSION_SAVE_EVERY_REQUEST = True

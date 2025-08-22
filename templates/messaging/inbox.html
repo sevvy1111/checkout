@@ -10,7 +10,7 @@
         <div class="card-body">
             <div class="list-group">
                 {% for conversation in conversations %}
-                <a href="{% url 'messaging:conversation_detail' pk=conversation.pk %}" class="list-group-item list-group-item-action {% if conversation.unread_count > 0 %}fw-bold{% endif %}">
+                <a href="{% url 'messaging:conversation_detail' conversation_key=conversation.conversation_key %}" class="list-group-item list-group-item-action {% if conversation.unread_count > 0 %}fw-bold{% endif %}">
                     <div class="d-flex w-100 justify-content-between">
                         <h5 class="mb-1">
                             <img src="{{ conversation.other_user.profile.display_avatar_url }}" alt="{{ conversation.other_user.username }}" class="rounded-circle me-2" width="40" height="40" style="object-fit: cover;">

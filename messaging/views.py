@@ -1,3 +1,4 @@
+# messaging/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView, DetailView
@@ -10,7 +11,8 @@ from django.contrib import messages
 from listings.models import Listing
 from django.urls import reverse
 from urllib.parse import urlencode
-from django.http import JsonResponse, HttpResponseBadRequest
+from django.http import JsonResponse
+from django.core.exceptions import PermissionDenied
 
 User = get_user_model()
 
@@ -45,6 +47,9 @@ class ConversationDetailView(LoginRequiredMixin, DetailView):
     model = Conversation
     template_name = 'messaging/conversation_detail.html'
     context_object_name = 'conversation'
+    # Use conversation_key from the URL to look up the object
+    slug_field = 'conversation_key'
+    slug_url_kwarg = 'conversation_key'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -66,7 +71,7 @@ class ConversationDetailView(LoginRequiredMixin, DetailView):
             except Listing.DoesNotExist:
                 pass
 
-        context['form'] = MessageForm(initial={'content': initial_message})
+        context['form'] = MessageForm(initial={'text': initial_message})
 
         # Mark messages as read
         conversation.messages.filter(receiver=self.request.user, is_read=False).update(is_read=True)
@@ -84,10 +89,6 @@ class ConversationDetailView(LoginRequiredMixin, DetailView):
                 message.receiver = self.object.get_other_user(request.user)
                 message.save()
 
-                # Update conversation's last message time
-                self.object.last_message_time = message.timestamp
-                self.object.save()
-
                 return JsonResponse({
                     'status': 'success',
                     'message': {
@@ -98,16 +99,16 @@ class ConversationDetailView(LoginRequiredMixin, DetailView):
                     'sender_avatar_url': request.user.profile.display_avatar_url
                 })
             else:
-                return JsonResponse({'status': 'error', 'message': form.errors}, status=400)
+                return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
 
-        # Fallback for non-AJAX requests
         if form.is_valid():
             message = form.save(commit=False)
             message.conversation = self.object
             message.sender = request.user
             message.receiver = self.object.get_other_user(request.user)
             message.save()
-            return redirect('messaging:conversation_detail', pk=self.object.pk)
+            # Redirect using the conversation_key
+            return redirect('messaging:conversation_detail', conversation_key=self.object.conversation_key)
         else:
             context = self.get_context_data()
             context['form'] = form
@@ -127,9 +128,10 @@ def send_message_view(request, recipient_username):
         recipient
     )
 
+    # Build the URL using the conversation_key
     redirect_url = reverse(
         'messaging:conversation_detail',
-        kwargs={'pk': conversation.pk}
+        kwargs={'conversation_key': conversation.conversation_key}
     )
 
     listing_pk = request.GET.get('listing')
